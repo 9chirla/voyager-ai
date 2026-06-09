@@ -374,20 +374,6 @@
     filter: drop-shadow(0 0 6px color-mix(in srgb, var(--plane-fill) 45%, transparent));
   }
 
-  .globe-bird-body {
-    fill: var(--gold);
-    stroke: var(--gold-glow);
-    stroke-width: 0.35;
-    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gold) 55%, transparent));
-  }
-
-  .globe-bird-wing {
-    fill: color-mix(in srgb, var(--gold-glow) 75%, var(--gold));
-    stroke: var(--gold-glow);
-    stroke-width: 0.3;
-    opacity: 0.92;
-  }
-
   .landing-fallback-hero {
     background: var(--void);
     overflow: hidden;
