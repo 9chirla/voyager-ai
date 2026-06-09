@@ -27,7 +27,7 @@ There is **no post-generation chat** — the plan panel is the product.
 
 ```bash
 git clone <repo-url>
-cd cmdshiftN
+cd voyager-ai
 cp .env.example .env
 # Add DEEPSEEK_API_KEY to .env
 npm install
