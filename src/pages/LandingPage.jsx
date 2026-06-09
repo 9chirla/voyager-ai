@@ -50,14 +50,9 @@ export default function LandingPage() {
             </section>
             <ScrollNarrative />
           </div>
-          <aside className="hidden md:block w-full max-w-[420px] shrink-0 pointer-events-auto">
-            <div className="sticky top-[120px]">
-              <LiveEventCard variant="landing" />
-            </div>
+          <aside className="w-full max-w-[420px] shrink-0 pointer-events-auto md:sticky md:top-[120px] md:self-start max-md:max-w-[860px] max-md:mx-auto max-md:pb-8">
+            <LiveEventCard variant="landing" />
           </aside>
-        </div>
-        <div className="md:hidden px-6 pb-8 max-w-[860px] mx-auto pointer-events-auto">
-          <LiveEventCard variant="landing" />
         </div>
       </section>
     </div>

@@ -5,11 +5,14 @@ const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 const API_BASE = 'https://app.ticketmaster.com/discovery/v2/events.json';
 
 const COUNTRY_POOLS = [
-  'JP', 'MX', 'BR', 'ES', 'AU', 'ZA', 'IN', 'IT', 'NL', 'TH',
-  'CO', 'PT', 'SE', 'NO', 'PL', 'AR', 'NZ', 'DE', 'FR', 'IE',
+  'GB', 'US', 'MX', 'ES', 'AU', 'DE', 'FR', 'IT', 'NL', 'IE',
+  'JP', 'BR', 'ZA', 'IN', 'TH', 'CO', 'PT', 'SE', 'NO', 'PL', 'AR', 'NZ',
 ];
 
-/** @type {Promise<import('../hooks/useLiveEvents').NormalizedEvent[]>|null} */
+/** @type {import('./useLiveEvents').NormalizedEvent[]|null} */
+let memoryCache = null;
+
+/** @type {Promise<import('./useLiveEvents').NormalizedEvent[]>|null>} */
 let inflightFetch = null;
 
 /**
@@ -38,6 +41,13 @@ function ninetyDaysISO() {
 }
 
 /**
+ * @param {object} venue
+ */
+function getCountryLabel(venue) {
+  return venue?.country?.name || venue?.country?.countryCode || null;
+}
+
+/**
  * @param {Array<{ ratio?: string, url?: string }>} images
  * @returns {string|undefined}
  */
@@ -51,10 +61,11 @@ function pickImageUrl(images) {
  * @param {object} event
  */
 function isValidEvent(event) {
+  const venue = event?._embedded?.venues?.[0];
   return Boolean(
     event?.name
-    && event?._embedded?.venues?.[0]?.city?.name
-    && event?._embedded?.venues?.[0]?.country?.name
+    && venue?.city?.name
+    && getCountryLabel(venue)
     && event?.dates?.start?.localDate
     && event?.images?.length,
   );
@@ -62,7 +73,7 @@ function isValidEvent(event) {
 
 /**
  * @param {object} event
- * @returns {import('../hooks/useLiveEvents').NormalizedEvent}
+ * @returns {import('./useLiveEvents').NormalizedEvent}
  */
 function normalizeEvent(event) {
   const venue = event._embedded.venues[0];
@@ -71,42 +82,61 @@ function normalizeEvent(event) {
     name: event.name,
     localDate: event.dates.start.localDate,
     city: venue.city.name,
-    country: venue.country.name,
+    country: getCountryLabel(venue),
     imageUrl: pickImageUrl(event.images),
   };
 }
 
 /**
  * @param {string} apiKey
- * @returns {Promise<import('../hooks/useLiveEvents').NormalizedEvent[]>}
+ * @param {string} countryCode
  */
-async function fetchLiveEvents(apiKey) {
-  const countries = shuffle(COUNTRY_POOLS).slice(0, 2);
-  const startDateTime = todayISO();
-  const endDateTime = ninetyDaysISO();
-
-  const requests = countries.map(async (countryCode) => {
-    const params = new URLSearchParams({
-      apikey: apiKey,
-      classificationName: 'music,festival,arts,theatre',
-      countryCode,
-      size: '8',
-      sort: 'relevance,desc',
-      startDateTime,
-      endDateTime,
-    });
-
-    const res = await fetch(`${API_BASE}?${params.toString()}`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data._embedded?.events ?? [];
+async function fetchCountryEvents(apiKey, countryCode) {
+  const params = new URLSearchParams({
+    apikey: apiKey,
+    countryCode,
+    size: '10',
+    sort: 'relevance,desc',
+    startDateTime: todayISO(),
+    endDateTime: ninetyDaysISO(),
   });
 
-  const batches = await Promise.all(requests);
-  const merged = batches.flat();
-  return shuffle(merged.filter(isValidEvent))
-    .slice(0, 12)
-    .map(normalizeEvent);
+  // Multiple classificationName params — comma-joined value is unreliable in Discovery API
+  ['music', 'festival', 'arts', 'theatre'].forEach((name) => {
+    params.append('classificationName', name);
+  });
+
+  const res = await fetch(`${API_BASE}?${params.toString()}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data._embedded?.events ?? [];
+}
+
+/**
+ * @param {string} apiKey
+ * @returns {Promise<import('./useLiveEvents').NormalizedEvent[]>}
+ */
+async function fetchLiveEvents(apiKey) {
+  const countries = shuffle(COUNTRY_POOLS);
+  const merged = [];
+  const seen = new Set();
+
+  for (const countryCode of countries) {
+    if (merged.length >= 12) break;
+
+    const batch = await fetchCountryEvents(apiKey, countryCode);
+    for (const event of batch) {
+      if (!isValidEvent(event) || seen.has(event.id)) continue;
+      seen.add(event.id);
+      merged.push(normalizeEvent(event));
+      if (merged.length >= 12) break;
+    }
+
+    // Stop early once we have enough variety
+    if (merged.length >= 8) break;
+  }
+
+  return shuffle(merged).slice(0, 12);
 }
 
 /**
@@ -120,12 +150,34 @@ async function fetchLiveEvents(apiKey) {
  */
 
 /**
+ * @returns {import('./useLiveEvents').NormalizedEvent[]|null}
+ */
+function readSessionCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (
+      cached?.fetchedAt
+      && Date.now() - cached.fetchedAt < CACHE_TTL_MS
+      && Array.isArray(cached.events)
+      && cached.events.length > 0
+    ) {
+      return cached.events;
+    }
+  } catch {
+    // ignore corrupt cache
+  }
+  return null;
+}
+
+/**
  * Fetch Ticketmaster events once per session (4h sessionStorage cache).
  * @returns {{ events: NormalizedEvent[], loading: boolean }}
  */
 export function useLiveEvents() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState(memoryCache ?? []);
+  const [loading, setLoading] = useState(!memoryCache);
 
   useEffect(() => {
     const apiKey = import.meta.env.VITE_TICKETMASTER_KEY;
@@ -135,27 +187,24 @@ export function useLiveEvents() {
       return undefined;
     }
 
-    let cancelled = false;
+    if (memoryCache?.length) {
+      setEvents(memoryCache);
+      setLoading(false);
+      return undefined;
+    }
+
+    const sessionCached = readSessionCache();
+    if (sessionCached) {
+      memoryCache = sessionCached;
+      setEvents(sessionCached);
+      setLoading(false);
+      return undefined;
+    }
+
+    let active = true;
 
     async function load() {
       try {
-        const raw = sessionStorage.getItem(CACHE_KEY);
-        if (raw) {
-          const cached = JSON.parse(raw);
-          if (
-            cached?.fetchedAt
-            && Date.now() - cached.fetchedAt < CACHE_TTL_MS
-            && Array.isArray(cached.events)
-            && cached.events.length > 0
-          ) {
-            if (!cancelled) {
-              setEvents(cached.events);
-              setLoading(false);
-            }
-            return;
-          }
-        }
-
         if (!inflightFetch) {
           inflightFetch = fetchLiveEvents(apiKey).finally(() => {
             inflightFetch = null;
@@ -163,9 +212,10 @@ export function useLiveEvents() {
         }
 
         const fetched = await inflightFetch;
-        if (cancelled) return;
+        if (!active) return;
 
         if (fetched.length > 0) {
+          memoryCache = fetched;
           sessionStorage.setItem(
             CACHE_KEY,
             JSON.stringify({ fetchedAt: Date.now(), events: fetched }),
@@ -175,13 +225,13 @@ export function useLiveEvents() {
       } catch {
         // Ambient feature — fail silently
       } finally {
-        if (!cancelled) setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
     load();
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, []);
 
