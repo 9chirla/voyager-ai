@@ -33,10 +33,13 @@ export default function ChatWindow({
   collectionDraft = {},
   currentStep = null,
   collectionTripData = {},
+  prefillDestination = null,
+  currentStepId = null,
 }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const prefillApplied = useRef(false);
 
   const inputType = currentStep?.inputType ?? 'text';
   const showTextInput = !isCollecting
@@ -53,6 +56,15 @@ export default function ChatWindow({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, error, currentStep]);
+
+  useEffect(() => {
+    if (!prefillDestination || prefillApplied.current) return;
+    if (currentStepId !== 's1_destination') return;
+
+    prefillApplied.current = true;
+    setInput(prefillDestination);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, [prefillDestination, currentStepId]);
 
   function handleSubmit(e) {
     e.preventDefault();

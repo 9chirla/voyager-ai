@@ -1,7 +1,10 @@
+import { useEffect, useRef, useState } from 'react';
 import { useChat } from './hooks/useChat';
 import ChatWindow from './components/ChatWindow';
 import TripSummaryPanel from './components/TripSummaryPanel';
 import StageIndicator, { getStageLabel } from './components/StageIndicator';
+import FactCard from './components/FactCard';
+import { FACT_DESTINATION_KEY } from './utils/sendToPlanner';
 import { Plane } from 'lucide-react';
 
 /**
@@ -36,9 +39,29 @@ export default function TripPlannerApp() {
     confirmGroupSize,
     collectionTripData,
     messages,
+    currentStepId,
   } = useChat();
 
   const showPlanView = !isCollecting;
+  const isWizardActive = isCollecting;
+  const [prefillDestination, setPrefillDestination] = useState(null);
+  const prefillHandled = useRef(false);
+
+  useEffect(() => {
+    if (prefillHandled.current) return;
+    const stored = sessionStorage.getItem(FACT_DESTINATION_KEY);
+    if (!stored || !isCollecting || currentStepId !== 's1_destination') return;
+
+    prefillHandled.current = true;
+    sessionStorage.removeItem(FACT_DESTINATION_KEY);
+    setPrefillDestination(stored);
+
+    requestAnimationFrame(() => {
+      const input = document.querySelector('[data-testid="chat-input"]');
+      input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      input?.focus();
+    });
+  }, [isCollecting, currentStepId]);
 
   return (
     <div className="mesh-bg min-h-screen flex flex-col transition-colors duration-300">
@@ -88,7 +111,8 @@ export default function TripPlannerApp() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-4xl mx-auto w-full flex overflow-hidden">
+      {/* NOTE: widened main to max-w-6xl — no existing sidebar column; FactCard added as right aside */}
+      <main className="flex-1 max-w-6xl mx-auto w-full flex overflow-hidden px-4 gap-6">
         {showPlanView ? (
           <section className="w-full flex flex-col h-[calc(100vh-57px)]" aria-label="Trip plan">
             <TripSummaryPanel
@@ -101,31 +125,46 @@ export default function TripPlannerApp() {
             />
           </section>
         ) : (
-          <section className="w-full flex flex-col h-[calc(100vh-57px)]" aria-label="Trip setup">
-            <ChatWindow
-              messages={messages}
-              isLoading={isLoading}
-              chips={chips}
-              error={error}
-              collectionError={collectionError}
-              onSend={sendMessage}
-              onChipSelect={handleChipSelect}
-              onDateSelect={handleDateSelect}
-              onTravelStyleConfirm={handleTravelStyleConfirm}
-              onBack={handleBack}
-              onRetry={retryLastMessage}
-              onReset={resetChat}
-              onToggleTravelStyle={toggleTravelStyle}
-              onUpdateTravelStyleText={updateTravelStyleText}
-              onSetGroupSize={setGroupSize}
-              onConfirmGroupSize={confirmGroupSize}
-              isCollecting={isCollecting}
-              collectionStage={collectionStage}
-              currentStep={currentStep}
-              collectionDraft={collectionDraft}
-              collectionTripData={collectionTripData}
-            />
-          </section>
+          <>
+            <section className="flex-1 min-w-0 flex flex-col h-[calc(100vh-57px)]" aria-label="Trip setup">
+              <ChatWindow
+                messages={messages}
+                isLoading={isLoading}
+                chips={chips}
+                error={error}
+                collectionError={collectionError}
+                onSend={sendMessage}
+                onChipSelect={handleChipSelect}
+                onDateSelect={handleDateSelect}
+                onTravelStyleConfirm={handleTravelStyleConfirm}
+                onBack={handleBack}
+                onRetry={retryLastMessage}
+                onReset={resetChat}
+                onToggleTravelStyle={toggleTravelStyle}
+                onUpdateTravelStyleText={updateTravelStyleText}
+                onSetGroupSize={setGroupSize}
+                onConfirmGroupSize={confirmGroupSize}
+                isCollecting={isCollecting}
+                collectionStage={collectionStage}
+                currentStep={currentStep}
+                collectionDraft={collectionDraft}
+                collectionTripData={collectionTripData}
+                prefillDestination={prefillDestination}
+                currentStepId={currentStepId}
+              />
+            </section>
+            <aside
+              className="hidden lg:flex w-72 shrink-0 py-4 pointer-events-auto"
+              aria-label="Travel dispatches"
+            >
+              <FactCard
+                variant="sidebar"
+                autoRotate={!isWizardActive}
+                dimmed={isWizardActive}
+                isCollecting={isCollecting}
+              />
+            </aside>
+          </>
         )}
       </main>
     </div>

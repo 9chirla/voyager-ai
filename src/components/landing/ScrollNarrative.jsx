@@ -46,8 +46,7 @@ export default function ScrollNarrative() {
   }, []);
 
   return (
-    <section className="relative z-30 pointer-events-none" aria-label="Features">
-      <div className="max-w-[860px] mx-auto px-6">
+    <div className="pointer-events-none">
         {SECTIONS.map((section, index) => (
           <article
             key={section.num}
@@ -71,7 +70,6 @@ export default function ScrollNarrative() {
             Start planning
           </button>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
