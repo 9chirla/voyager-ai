@@ -10,7 +10,7 @@ export default function HeroText({ scrollProgress = 0 }) {
 
   return (
     <div
-      className="landing-hero-text pointer-events-none absolute inset-0 z-10 flex"
+      className="landing-hero-text pointer-events-none relative z-10"
       style={{
         opacity: fade,
         transform: `translateY(${scrollProgress * -40}px)`,

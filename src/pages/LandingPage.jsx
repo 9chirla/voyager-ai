@@ -49,10 +49,8 @@ export default function LandingPage() {
       </div>
 
       <section className="scroll-narrative relative z-30" aria-label="Landing content">
+        <HeroText scrollProgress={scrollProgress} />
         <div className="max-w-[860px] mx-auto px-6">
-          <section className="relative z-10 min-h-screen pointer-events-none">
-            <HeroText scrollProgress={scrollProgress} />
-          </section>
           <ScrollNarrative />
         </div>
       </section>
