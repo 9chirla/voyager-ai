@@ -409,6 +409,10 @@
     transition: opacity 0.8s ease-out, transform 0.8s ease-out;
   }
 
+  .landing-scroll-section--over-globe {
+    text-shadow: 0 1px 12px color-mix(in srgb, var(--void) 85%, transparent);
+  }
+
   .landing-scroll-section.is-visible {
     opacity: 1;
     transform: translateY(0);

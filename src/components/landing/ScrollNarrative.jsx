@@ -46,7 +46,7 @@ export default function ScrollNarrative() {
   }, []);
 
   return (
-    <section className="relative z-30 bg-void" aria-label="Features">
+    <section className="relative z-30 pointer-events-none" aria-label="Features">
       <div className="max-w-[860px] mx-auto px-6">
         {SECTIONS.map((section, index) => (
           <article
@@ -54,7 +54,7 @@ export default function ScrollNarrative() {
             ref={(el) => {
               sectionRefs.current[index] = el;
             }}
-            className="landing-scroll-section min-h-[80vh] flex flex-col justify-center py-16"
+            className="landing-scroll-section landing-scroll-section--over-globe min-h-[80vh] flex flex-col justify-center py-16"
           >
             <p className="landing-section-num mb-4">{section.num}</p>
             <h2 className="landing-section-head mb-5">{section.headline}</h2>
@@ -66,7 +66,7 @@ export default function ScrollNarrative() {
           <button
             type="button"
             onClick={() => navigate('/app')}
-            className="cta-primary"
+            className="cta-primary pointer-events-auto"
           >
             Start planning
           </button>

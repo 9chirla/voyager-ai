@@ -52,8 +52,8 @@ export default function D3GlobeScene({
     const endRadius = minDim * 0.13;
     const globeStartX = centerX;
     const globeStartY = centerY;
-    const endX = containerWidth * 0.84;
-    const endY = containerHeight * 0.36;
+    const endX = containerWidth * 0.72;
+    const endY = containerHeight * 0.44;
 
     const ease = (t) => t * t * (3 - 2 * t);
 

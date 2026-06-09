@@ -18,8 +18,9 @@ export default function LandingPage() {
 
   useEffect(() => {
     const onScroll = () => {
-      const range = window.innerHeight;
-      const progress = Math.min(1, Math.max(0, window.scrollY / range));
+      const range = window.innerHeight * 0.85;
+      // Cap early so the globe stays visible behind narrative sections.
+      const progress = Math.min(0.55, Math.max(0, window.scrollY / range));
       setScrollProgress(progress);
     };
     onScroll();
