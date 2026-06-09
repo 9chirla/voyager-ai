@@ -3,8 +3,8 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, Bounds } from '@react-three/drei';
 import * as THREE from 'three';
 
-const TOUCAN_GLB = '/toucan/toucan-neutral-flying-pose/toucan.glb';
-const TOUCAN_TEXTURES = '/toucan/toucan-neutral-flying-pose/textures';
+const TOUCAN_GLB = `${import.meta.env.BASE_URL}toucan/toucan-neutral-flying-pose/toucan.glb`;
+const TOUCAN_TEXTURES = `${import.meta.env.BASE_URL}toucan/toucan-neutral-flying-pose/textures`;
 const BOX_HALF_W = 80;
 const BOX_HALF_H = 70;
 const FACING_OFFSET = 180;

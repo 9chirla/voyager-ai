@@ -10,7 +10,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
  */
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <div className="theme-toggle-fixed">
         <ThemeSwitch />
       </div>
