@@ -6,6 +6,13 @@ import {
   buildFlightTrailPath,
   getCrossOrbitPosition,
 } from './GlobeAirplane';
+import {
+  BIRD_BODY_PATH,
+  BIRD_WING_PATH,
+  BIRD_WING_PIVOT,
+  getBirdOrbitPosition,
+  getWingFlapAngle,
+} from './GlobeBird';
 
 /**
  * D3 halftone dot globe — cartographic gold-on-void aesthetic.
@@ -20,6 +27,8 @@ export default function D3GlobeScene({
 }) {
   const canvasRef = useRef(null);
   const planeRef = useRef(null);
+  const birdRef = useRef(null);
+  const birdWingRef = useRef(null);
   const flightPathRef = useRef(null);
   const flightTrailRef = useRef(null);
   const scrollRef = useRef(scrollProgress);
@@ -136,21 +145,43 @@ export default function D3GlobeScene({
       return scale / startRadius;
     };
 
-    const updateAirplane = (globeRadius) => {
+    const updateOrbiters = (globeRadius) => {
       const [globeX, globeY] = projection.translate();
       const plane = planeRef.current;
+      const bird = birdRef.current;
+      const birdWing = birdWingRef.current;
       const flightPath = flightPathRef.current;
       const flightTrail = flightTrailRef.current;
       if (!plane) return;
 
       const sizeScale = 0.6 + (globeRadius / startRadius) * 0.7;
-      const pos = getCrossOrbitPosition(orbitTime, globeX, globeY, globeRadius);
+      const planePos = getCrossOrbitPosition(orbitTime, globeX, globeY, globeRadius);
 
       plane.setAttribute(
         'transform',
-        `translate(${pos.x}, ${pos.y}) rotate(${pos.angle}) rotate(${pos.bank}) scale(${sizeScale * pos.scale})`,
+        `translate(${planePos.x}, ${planePos.y}) rotate(${planePos.angle}) rotate(${planePos.bank}) scale(${sizeScale * planePos.scale})`,
       );
-      plane.setAttribute('opacity', String(pos.opacity));
+      plane.setAttribute('opacity', String(planePos.opacity));
+
+      if (bird) {
+        const birdPos = getBirdOrbitPosition(orbitTime, globeX, globeY, globeRadius);
+        const birdScale = sizeScale * birdPos.scale * 0.9;
+
+        bird.setAttribute(
+          'transform',
+          `translate(${birdPos.x}, ${birdPos.y}) rotate(${birdPos.angle}) rotate(${birdPos.bank * 0.6}) scale(${birdScale})`,
+        );
+        bird.setAttribute('opacity', String(birdPos.opacity));
+
+        if (birdWing) {
+          const flap = getWingFlapAngle(orbitTime, 0.85 + birdPos.scale * 0.2);
+          const { x, y } = BIRD_WING_PIVOT;
+          birdWing.setAttribute(
+            'transform',
+            `translate(${x}, ${y}) rotate(${flap}) translate(${-x}, ${-y})`,
+          );
+        }
+      }
 
       if (flightPath) {
         flightPath.setAttribute('d', buildCrossOrbitPath(globeX, globeY, globeRadius));
@@ -159,7 +190,7 @@ export default function D3GlobeScene({
 
       if (flightTrail) {
         flightTrail.setAttribute('d', buildFlightTrailPath(orbitTime, globeX, globeY, globeRadius));
-        flightTrail.setAttribute('opacity', String(pos.depth < -0.15 ? 0.2 : 0.55));
+        flightTrail.setAttribute('opacity', String(planePos.depth < -0.15 ? 0.2 : 0.55));
       }
     };
 
@@ -191,7 +222,7 @@ export default function D3GlobeScene({
         });
       }
 
-      updateAirplane(currentScale);
+      updateOrbiters(currentScale);
     };
 
     const loadWorldData = async () => {
@@ -311,6 +342,12 @@ export default function D3GlobeScene({
         <path ref={flightTrailRef} className="globe-flight-trail" />
         <g ref={planeRef}>
           <path d={AIRPLANE_PATH} className="globe-plane-icon" />
+        </g>
+        <g ref={birdRef}>
+          <path d={BIRD_BODY_PATH} className="globe-bird-body" />
+          <g ref={birdWingRef}>
+            <path d={BIRD_WING_PATH} className="globe-bird-wing" />
+          </g>
         </g>
       </svg>
     </div>

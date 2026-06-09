@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import HeroText from '../components/landing/HeroText';
 import ScrollNarrative from '../components/landing/ScrollNarrative';
-import ToucanMascot from '../components/ToucanMascot';
 
 const HeroCanvas = lazy(() => import('../components/landing/HeroCanvas'));
 
@@ -45,8 +44,6 @@ export default function LandingPage() {
       </section>
 
       <ScrollNarrative />
-
-      <ToucanMascot />
     </div>
   );
 }
