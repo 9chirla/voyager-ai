@@ -154,7 +154,7 @@ export default function TripPlannerApp() {
               />
             </section>
             <aside
-              className="hidden lg:flex w-72 shrink-0 py-4 pointer-events-auto"
+              className="hidden md:flex w-72 shrink-0 py-4 pointer-events-auto"
               aria-label="Live events"
             >
               <LiveEventCard

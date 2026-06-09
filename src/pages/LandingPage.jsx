@@ -40,19 +40,20 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* NOTE: hero + scroll-narrative share one flex row so the sticky LiveEventCard gutter
-          is visible on first paint (hero) and travels through narrative sections */}
+      {/* NOTE: adapted from spec — fixed overlay so card is visible on first paint (not buried below narrative) */}
+      <div
+        className="live-event-card-anchor pointer-events-auto"
+        aria-label="Live events"
+      >
+        <LiveEventCard variant="landing" />
+      </div>
+
       <section className="scroll-narrative relative z-30" aria-label="Landing content">
-        <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row md:items-start gap-10">
-          <div className="flex-1 min-w-0 max-w-[860px]">
-            <section className="relative z-10 min-h-screen pointer-events-none">
-              <HeroText scrollProgress={scrollProgress} />
-            </section>
-            <ScrollNarrative />
-          </div>
-          <aside className="w-full max-w-[420px] shrink-0 pointer-events-auto md:sticky md:top-[120px] md:self-start max-md:max-w-[860px] max-md:mx-auto max-md:pb-8">
-            <LiveEventCard variant="landing" />
-          </aside>
+        <div className="max-w-[860px] mx-auto px-6">
+          <section className="relative z-10 min-h-screen pointer-events-none">
+            <HeroText scrollProgress={scrollProgress} />
+          </section>
+          <ScrollNarrative />
         </div>
       </section>
     </div>

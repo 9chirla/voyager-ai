@@ -12,8 +12,11 @@ const COUNTRY_POOLS = [
 /** @type {import('./useLiveEvents').NormalizedEvent[]|null} */
 let memoryCache = null;
 
-/** @type {Promise<import('./useLiveEvents').NormalizedEvent[]>|null>} */
+/** @type {Promise<void>|null} */
 let inflightFetch = null;
+
+/** @type {Set<() => void>} */
+const listeners = new Set();
 
 /**
  * @param {unknown[]} arr
@@ -101,7 +104,6 @@ async function fetchCountryEvents(apiKey, countryCode) {
     endDateTime: ninetyDaysISO(),
   });
 
-  // Multiple classificationName params — comma-joined value is unreliable in Discovery API
   ['music', 'festival', 'arts', 'theatre'].forEach((name) => {
     params.append('classificationName', name);
   });
@@ -132,7 +134,6 @@ async function fetchLiveEvents(apiKey) {
       if (merged.length >= 12) break;
     }
 
-    // Stop early once we have enough variety
     if (merged.length >= 8) break;
   }
 
@@ -148,6 +149,10 @@ async function fetchLiveEvents(apiKey) {
  * @property {string} country
  * @property {string} [imageUrl]
  */
+
+function notifyListeners() {
+  listeners.forEach((listener) => listener());
+}
 
 /**
  * @returns {import('./useLiveEvents').NormalizedEvent[]|null}
@@ -171,67 +176,64 @@ function readSessionCache() {
   return null;
 }
 
-/**
- * Fetch Ticketmaster events once per session (4h sessionStorage cache).
- * @returns {{ events: NormalizedEvent[], loading: boolean }}
- */
-export function useLiveEvents() {
-  const [events, setEvents] = useState(memoryCache ?? []);
-  const [loading, setLoading] = useState(!memoryCache);
+function ensureLoaded() {
+  const apiKey = import.meta.env.VITE_TICKETMASTER_KEY;
+  if (!apiKey) {
+    console.warn('VITE_TICKETMASTER_KEY is not set — LiveEventCard disabled');
+    return Promise.resolve();
+  }
 
-  useEffect(() => {
-    const apiKey = import.meta.env.VITE_TICKETMASTER_KEY;
-    if (!apiKey) {
-      console.warn('VITE_TICKETMASTER_KEY is not set — LiveEventCard disabled');
-      setLoading(false);
-      return undefined;
-    }
+  if (memoryCache?.length) return Promise.resolve();
 
-    if (memoryCache?.length) {
-      setEvents(memoryCache);
-      setLoading(false);
-      return undefined;
-    }
+  const sessionCached = readSessionCache();
+  if (sessionCached) {
+    memoryCache = sessionCached;
+    notifyListeners();
+    return Promise.resolve();
+  }
 
-    const sessionCached = readSessionCache();
-    if (sessionCached) {
-      memoryCache = sessionCached;
-      setEvents(sessionCached);
-      setLoading(false);
-      return undefined;
-    }
-
-    let active = true;
-
-    async function load() {
-      try {
-        if (!inflightFetch) {
-          inflightFetch = fetchLiveEvents(apiKey).finally(() => {
-            inflightFetch = null;
-          });
-        }
-
-        const fetched = await inflightFetch;
-        if (!active) return;
-
+  if (!inflightFetch) {
+    inflightFetch = fetchLiveEvents(apiKey)
+      .then((fetched) => {
         if (fetched.length > 0) {
           memoryCache = fetched;
           sessionStorage.setItem(
             CACHE_KEY,
             JSON.stringify({ fetchedAt: Date.now(), events: fetched }),
           );
-          setEvents(fetched);
         }
-      } catch {
+      })
+      .catch(() => {
         // Ambient feature — fail silently
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
+      })
+      .finally(() => {
+        inflightFetch = null;
+        notifyListeners();
+      });
+  }
 
-    load();
+  return inflightFetch;
+}
+
+/**
+ * Fetch Ticketmaster events once per session (4h sessionStorage cache).
+ * @returns {{ events: NormalizedEvent[], loading: boolean }}
+ */
+export function useLiveEvents() {
+  const [events, setEvents] = useState(memoryCache ?? []);
+  const [loading, setLoading] = useState(!memoryCache?.length);
+
+  useEffect(() => {
+    const sync = () => {
+      setEvents(memoryCache ?? []);
+      setLoading(false);
+    };
+
+    listeners.add(sync);
+    ensureLoaded().then(sync);
+
     return () => {
-      active = false;
+      listeners.delete(sync);
     };
   }, []);
 
