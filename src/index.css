@@ -152,20 +152,22 @@
 
   .landing-hero-text {
     align-items: center;
+    padding-top: clamp(3.5rem, 10vh, 6rem);
+    padding-bottom: clamp(2rem, 6vh, 4rem);
     background: linear-gradient(
       105deg,
       var(--hero-scrim-strong) 0%,
       var(--hero-scrim-mid) 42%,
-      transparent 68%
+      transparent 72%
     );
   }
 
   .landing-hero-copy {
     width: 100%;
-    max-width: 48%;
+    max-width: min(48%, calc(100vw - 420px));
     padding-left: clamp(5%, 8vw, 120px);
     padding-right: 1.5rem;
-    margin-top: -4vh;
+    margin-top: 0;
   }
 
   @media (max-width: 767px) {
