@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import FactCard from '../components/FactCard';
+import LiveEventCard from '../components/LiveEventCard';
 import HeroText from '../components/landing/HeroText';
 import ScrollNarrative from '../components/landing/ScrollNarrative';
 
@@ -40,7 +40,7 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* NOTE: hero + scroll-narrative share one flex row so the sticky FactCard gutter
+      {/* NOTE: hero + scroll-narrative share one flex row so the sticky LiveEventCard gutter
           is visible on first paint (hero) and travels through narrative sections */}
       <section className="scroll-narrative relative z-30" aria-label="Landing content">
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row md:items-start gap-10">
@@ -52,12 +52,12 @@ export default function LandingPage() {
           </div>
           <aside className="hidden md:block w-full max-w-[420px] shrink-0 pointer-events-auto">
             <div className="sticky top-[120px]">
-              <FactCard variant="landing" />
+              <LiveEventCard variant="landing" />
             </div>
           </aside>
         </div>
         <div className="md:hidden px-6 pb-8 max-w-[860px] mx-auto pointer-events-auto">
-          <FactCard variant="landing" />
+          <LiveEventCard variant="landing" />
         </div>
       </section>
     </div>

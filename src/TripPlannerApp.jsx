@@ -3,7 +3,7 @@ import { useChat } from './hooks/useChat';
 import ChatWindow from './components/ChatWindow';
 import TripSummaryPanel from './components/TripSummaryPanel';
 import StageIndicator, { getStageLabel } from './components/StageIndicator';
-import FactCard from './components/FactCard';
+import LiveEventCard from './components/LiveEventCard';
 import { FACT_DESTINATION_KEY } from './utils/sendToPlanner';
 import { Plane } from 'lucide-react';
 
@@ -111,7 +111,7 @@ export default function TripPlannerApp() {
         </div>
       </header>
 
-      {/* NOTE: widened main to max-w-6xl — no existing sidebar column; FactCard added as right aside */}
+      {/* NOTE: widened main to max-w-6xl — no existing sidebar column; LiveEventCard added as right aside */}
       <main className="flex-1 max-w-6xl mx-auto w-full flex overflow-hidden px-4 gap-6">
         {showPlanView ? (
           <section className="w-full flex flex-col h-[calc(100vh-57px)]" aria-label="Trip plan">
@@ -155,13 +155,13 @@ export default function TripPlannerApp() {
             </section>
             <aside
               className="hidden lg:flex w-72 shrink-0 py-4 pointer-events-auto"
-              aria-label="Travel dispatches"
+              aria-label="Live events"
             >
-              <FactCard
+              <LiveEventCard
                 variant="sidebar"
-                autoRotate={!isWizardActive}
-                dimmed={isWizardActive}
                 isCollecting={isCollecting}
+                pauseRotation={isWizardActive}
+                dimmed={isWizardActive}
               />
             </aside>
           </>
