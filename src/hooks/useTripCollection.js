@@ -1,4 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  getSectionSummaries,
+  validateCardCollection,
+} from '../utils/collectionValidation';
 
 const COLLECTION_STORAGE_KEY = 'voyager-collection';
 const COLLECTION_VERSION = 3;
@@ -529,18 +533,21 @@ export function useTripCollection() {
     }
   }, [isComplete, currentStepId, tripData, draft, advance, currentStep]);
 
-  const toggleChip = useCallback((chip) => {
-    if (currentStepId !== 's9_dietary') return;
+  const toggleDietaryChip = useCallback((chip) => {
     setCollectionError(null);
     setDraft((prev) => {
       if (chip === 'None') return { ...prev, dietary: ['None'] };
-      const without = prev.dietary.filter((c) => c !== 'None');
+      const without = (prev.dietary ?? []).filter((c) => c !== 'None');
       const dietary = without.includes(chip)
         ? without.filter((c) => c !== chip)
         : [...without, chip];
       return { ...prev, dietary };
     });
-  }, [currentStepId]);
+  }, []);
+
+  const toggleChip = useCallback((chip) => {
+    toggleDietaryChip(chip);
+  }, [toggleDietaryChip]);
 
   const confirmTravelStyle = useCallback(() => {
     if (currentStepId !== 's10_style') return { success: false };
@@ -570,7 +577,6 @@ export function useTripCollection() {
   }, [currentStepId, tripData, draft]);
 
   const toggleTravelStyle = useCallback((section, chip) => {
-    if (currentStepId !== 's10_style') return;
     setCollectionError(null);
     setDraft((prev) => {
       if (section === 'pace') {
@@ -588,7 +594,7 @@ export function useTripCollection() {
       }
       return prev;
     });
-  }, [currentStepId]);
+  }, []);
 
   const updateTravelStyleText = useCallback((field, value) => {
     setDraft((prev) => ({ ...prev, [field]: value }));
@@ -648,6 +654,80 @@ export function useTripCollection() {
     localStorage.removeItem(COLLECTION_STORAGE_KEY);
   }, []);
 
+  const patchTripData = useCallback((updates) => {
+    setCollectionError(null);
+    setTripData((prev) => {
+      const next = { ...prev, ...updates };
+      if (updates.groupType === 'solo') {
+        next.groupSize = 1;
+        next.hasChildren = false;
+        next.childrenAges = null;
+      }
+      if (updates.groupType === 'couple') {
+        next.groupSize = 2;
+        next.hasChildren = null;
+        next.childrenAges = null;
+      }
+      if (updates.groupType === 'friends' || updates.groupType === 'family') {
+        next.groupSize = next.groupSize && next.groupSize >= 2 ? next.groupSize : 4;
+        next.hasChildren = null;
+        next.childrenAges = null;
+      }
+      if (updates.flightsBooked === true) {
+        next.departureCity = null;
+      }
+      if (updates.flightsBooked === false) {
+        next.flightTiming = next.flightTiming || null;
+      }
+      if (updates.accommodationBooked === true) {
+        next.accommodationType = null;
+      }
+      if (updates.hasChildren === false) {
+        next.childrenAges = null;
+      }
+      return next;
+    });
+  }, []);
+
+  const patchDraft = useCallback((updates) => {
+    setCollectionError(null);
+    setDraft((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const submitFromCards = useCallback(() => {
+    const validation = validateCardCollection(tripData, draft);
+    if (!validation.valid) {
+      const firstErr = validation.errors[validation.firstInvalid];
+      setCollectionError(firstErr);
+      return { success: false, errors: validation.errors, firstInvalid: validation.firstInvalid };
+    }
+
+    setCollectionError(null);
+    const dietaryValue = draft.dietary?.includes('None')
+      ? null
+      : (draft.dietary?.join(', ') || tripData.dietaryRequirements);
+
+    const collected = {
+      ...tripData,
+      dietaryRequirements: dietaryValue,
+      pace: draft.pace,
+      activitiesPerDay: ACTIVITIES_MAP[draft.pace] ?? '3-4',
+      firstVisit: draft.firstVisit ?? true,
+      mustSee: draft.mustSee?.trim() || null,
+      hardAvoid: draft.hardAvoid?.trim() || null,
+      interests: draft.selectedInterests.join(', '),
+    };
+
+    setTripData(collected);
+    setIsComplete(true);
+    return { success: true, justCompleted: true, collected };
+  }, [tripData, draft]);
+
+  const sectionSummaries = useMemo(
+    () => getSectionSummaries(tripData, draft),
+    [tripData, draft],
+  );
+
   const chips = useMemo(() => {
     if (!currentStep?.chips) return [];
     const base = [...currentStep.chips];
@@ -669,6 +749,7 @@ export function useTripCollection() {
     resetCollection,
     collectionError,
     toggleChip,
+    toggleDietaryChip,
     confirmTravelStyle,
     toggleTravelStyle,
     updateTravelStyleText,
@@ -676,6 +757,10 @@ export function useTripCollection() {
     confirmGroupSize,
     draft,
     chips,
+    patchTripData,
+    patchDraft,
+    submitFromCards,
+    sectionSummaries,
     DISPLAY_STAGE,
   };
 }

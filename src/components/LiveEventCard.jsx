@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { formatEventDateChip, useLiveEvents } from '../hooks/useLiveEvents';
+import { buildLiveEventContext } from '../utils/plannerContext';
 import { sendToPlanner } from '../utils/sendToPlanner';
 import './LiveEventCard.css';
 
@@ -9,7 +10,7 @@ const ROTATE_MS = 20000;
 const FADE_MS = 350;
 
 /**
- * @param {{ variant?: 'landing' | 'sidebar', onCtaClick?: (cityName: string) => void, isCollecting?: boolean, pauseRotation?: boolean, dimmed?: boolean }} props
+ * @param {{ variant?: 'landing' | 'sidebar', onCtaClick?: (cityName: string) => void, isCollecting?: boolean, pauseRotation?: boolean, dimmed?: boolean, countryFilter?: 'uk' }} props
  */
 export default function LiveEventCard({
   variant = 'landing',
@@ -17,10 +18,17 @@ export default function LiveEventCard({
   isCollecting = false,
   pauseRotation = false,
   dimmed = false,
+  countryFilter,
 }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { events, loading } = useLiveEvents();
+  const { events: allEvents, loading } = useLiveEvents();
+  const events = countryFilter === 'uk'
+    ? allEvents.filter((e) => {
+      const c = (e.country ?? '').toLowerCase();
+      return c.includes('united kingdom') || c.includes('great britain') || c === 'gb';
+    })
+    : allEvents;
   const currentIndexRef = useRef(0);
   const [renderTick, setRenderTick] = useState(0);
   const [contentVisible, setContentVisible] = useState(true);
@@ -72,12 +80,14 @@ export default function LiveEventCard({
   void renderTick;
 
   const handleCta = () => {
+    const context = buildLiveEventContext(event, formatEventDateChip);
+
     if (onCtaClick) {
-      onCtaClick(event.city);
+      onCtaClick(context.destination);
       return;
     }
 
-    sendToPlanner(event.city, {
+    sendToPlanner(context, {
       pathname,
       isCollecting,
       navigate,
@@ -94,7 +104,7 @@ export default function LiveEventCard({
   return (
     <article className={className} aria-live="polite" aria-atomic="true">
       <div className="live-event-card__eyebrow">
-        <p className="live-event-card__label">Live Event</p>
+        <p className="live-event-card__label">{countryFilter === 'uk' ? 'UK Event' : 'Live Event'}</p>
         <span className="live-event-card__date-chip">
           {formatEventDateChip(event.localDate)}
         </span>

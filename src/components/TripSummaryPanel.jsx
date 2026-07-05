@@ -41,9 +41,9 @@ const TripDayAccordion = memo(function TripDayAccordion({ day, expanded, onToggl
       {expanded && (
         <div className="px-3 pb-3 space-y-2 border-t border-white/5 pt-2">
           {day.theme && <p className="text-xs text-amber/70 italic">{day.theme}</p>}
-          {day.morning && <TimeSlot label="Morning" activity={day.morning} />}
-          {day.afternoon && <TimeSlot label="Afternoon" activity={day.afternoon} />}
-          {day.evening && <TimeSlot label="Evening" activity={day.evening} />}
+          {day.morning && <TimeSlot label="Morning" activity={day.morning} whyToday={day.morningWhy} />}
+          {day.afternoon && <TimeSlot label="Afternoon" activity={day.afternoon} whyToday={day.afternoonWhy} />}
+          {day.evening && <TimeSlot label="Evening" activity={day.evening} whyToday={day.eveningWhy} />}
         </div>
       )}
     </div>
@@ -92,9 +92,9 @@ export default function TripSummaryPanel({
       lines.push('── ITINERARY ──', '');
       itinerary.forEach((day) => {
         lines.push(`DAY ${day.day} | ${day.location}: ${day.theme}`);
-        if (day.morning) lines.push(`  Morning:   ${day.morning}`);
-        if (day.afternoon) lines.push(`  Afternoon: ${day.afternoon}`);
-        if (day.evening) lines.push(`  Evening:   ${day.evening}`);
+        if (day.morning) lines.push(`  Morning:   ${day.morning}${day.morningWhy ? ` Why today: ${day.morningWhy}` : ''}`);
+        if (day.afternoon) lines.push(`  Afternoon: ${day.afternoon}${day.afternoonWhy ? ` Why today: ${day.afternoonWhy}` : ''}`);
+        if (day.evening) lines.push(`  Evening:   ${day.evening}${day.eveningWhy ? ` Why today: ${day.eveningWhy}` : ''}`);
         lines.push('');
       });
     }
@@ -284,11 +284,20 @@ function SummaryField({ icon: Icon, label, value }) {
   );
 }
 
-function TimeSlot({ label, activity }) {
+function TimeSlot({ label, activity, whyToday }) {
   return (
-    <div className="text-xs">
-      <span className="text-teal/70 font-medium">{label}:</span>{' '}
-      <span className="text-cream/70">{activity}</span>
+    <div className="text-xs mb-2 last:mb-0">
+      <p>
+        <span className="text-teal/70 font-medium">{label}:</span>{' '}
+        <span className="text-cream/70">{activity}</span>
+      </p>
+      {whyToday && (
+        <p className="mt-1 pl-3 border-l border-amber/25 text-cream/50 italic leading-snug">
+          Why today:
+          {' '}
+          {whyToday}
+        </p>
+      )}
     </div>
   );
 }

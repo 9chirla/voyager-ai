@@ -1,19 +1,51 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import LiveEventCard from '../components/LiveEventCard';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import DestinationExplorer from '../components/DestinationExplorer';
 import HeroText from '../components/landing/HeroText';
+import ScopeToggle from '../components/landing/ScopeToggle';
 import ScrollNarrative from '../components/landing/ScrollNarrative';
+import { UkHomeCityProvider } from '../context/UkHomeCityContext';
+import { TravelScopeProvider, useTravelScope } from '../context/TravelScopeContext';
 
 const HeroCanvas = lazy(() => import('../components/landing/HeroCanvas'));
 
-/**
- * Landing page — D3 halftone globe with hero copy overlay.
- */
-export default function LandingPage() {
+function LandingPageContent() {
+  const navigate = useNavigate();
+  const { scope } = useTravelScope();
+  const ctaRef = useRef(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [scope]);
   const [mounted, setMounted] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reveal = (node) => {
+      if (node) node.classList.add('is-visible');
+    };
+
+    if (prefersReducedMotion) {
+      reveal(ctaRef.current);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add('is-visible');
+        });
+      },
+      { threshold: 0, rootMargin: '0px 0px -5% 0px' },
+    );
+
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -33,27 +65,47 @@ export default function LandingPage() {
       <div className="fixed inset-0 z-0">
         {mounted ? (
           <Suspense fallback={<div className="absolute inset-0 bg-void" aria-hidden="true" />}>
-            <HeroCanvas scrollProgress={scrollProgress} />
+            <HeroCanvas scrollProgress={scrollProgress} focusScope={scope} />
           </Suspense>
         ) : (
           <div className="absolute inset-0 bg-void" aria-hidden="true" />
         )}
       </div>
 
-      {/* NOTE: adapted from spec — fixed overlay so card is visible on first paint (not buried below narrative) */}
-      <div
-        className="live-event-card-anchor pointer-events-auto"
-        aria-label="Live events"
-      >
-        <LiveEventCard variant="landing" />
+      <div className="scope-toggle-fixed pointer-events-auto">
+        <ScopeToggle />
       </div>
 
       <section className="scroll-narrative relative z-30" aria-label="Landing content">
         <HeroText scrollProgress={scrollProgress} />
-        <div className="max-w-[860px] mx-auto px-6">
-          <ScrollNarrative />
+        <ScrollNarrative />
+        <DestinationExplorer />
+        <div
+          ref={ctaRef}
+          className="landing-scroll-section landing-scroll-section--over-globe pb-24 pt-8 flex justify-center px-6 pointer-events-auto"
+        >
+          <button
+            type="button"
+            onClick={() => navigate('/app')}
+            className="cta-primary"
+          >
+            Start planning
+          </button>
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * Landing page — D3 halftone globe with hero copy overlay.
+ */
+export default function LandingPage() {
+  return (
+    <TravelScopeProvider>
+      <UkHomeCityProvider>
+        <LandingPageContent />
+      </UkHomeCityProvider>
+    </TravelScopeProvider>
   );
 }

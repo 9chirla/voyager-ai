@@ -1,28 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from './hooks/useChat';
-import ChatWindow from './components/ChatWindow';
+import TripCollectionWizard from './components/TripCollectionWizard';
 import TripSummaryPanel from './components/TripSummaryPanel';
 import StageIndicator, { getStageLabel } from './components/StageIndicator';
-import LiveEventCard from './components/LiveEventCard';
+import SeasonalCard from './components/SeasonalCard';
+import { FACT_CONTEXT_KEY, parseStoredContext } from './utils/plannerContext';
 import { FACT_DESTINATION_KEY } from './utils/sendToPlanner';
 import { Plane } from 'lucide-react';
 
 /**
- * Trip planner application shell — collection wizard, then full-width trip plan.
+ * Trip planner application shell — card-based collection wizard, then trip plan view.
  */
 export default function TripPlannerApp() {
   const {
     tripData,
     stage,
     isLoading,
-    chips,
     error,
     collectionError,
-    sendMessage,
-    handleChipSelect,
-    handleDateSelect,
-    handleTravelStyleConfirm,
-    handleBack,
+    applyInspiration,
     resetChat,
     stopStreaming,
     retryLastMessage,
@@ -30,44 +26,53 @@ export default function TripPlannerApp() {
     checklistState,
     isCollecting,
     isStreamingPlan,
-    collectionStage,
-    currentStep,
     collectionDraft,
     toggleTravelStyle,
     updateTravelStyleText,
-    setGroupSize,
-    confirmGroupSize,
     collectionTripData,
-    messages,
-    currentStepId,
+    sectionSummaries,
+    patchTripData,
+    toggleDietaryChip,
+    submitCollectionCards,
+    cardValidationErrors,
   } = useChat();
 
   const showPlanView = !isCollecting;
   const isWizardActive = isCollecting;
   const [prefillDestination, setPrefillDestination] = useState(null);
+  const [activeSection, setActiveSection] = useState(1);
   const prefillHandled = useRef(false);
 
   useEffect(() => {
     if (prefillHandled.current) return;
-    const stored = sessionStorage.getItem(FACT_DESTINATION_KEY);
-    if (!stored || !isCollecting || currentStepId !== 's1_destination') return;
+    const storedDestination = sessionStorage.getItem(FACT_DESTINATION_KEY);
+    if (!storedDestination || !isCollecting) return;
 
     prefillHandled.current = true;
+    const storedContext = sessionStorage.getItem(FACT_CONTEXT_KEY);
     sessionStorage.removeItem(FACT_DESTINATION_KEY);
-    setPrefillDestination(stored);
+    sessionStorage.removeItem(FACT_CONTEXT_KEY);
 
-    requestAnimationFrame(() => {
-      const input = document.querySelector('[data-testid="chat-input"]');
-      input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      input?.focus();
-    });
-  }, [isCollecting, currentStepId]);
+    const context = parseStoredContext(storedContext, storedDestination);
+    applyInspiration(context);
+    setPrefillDestination(context.destination);
+    setActiveSection(1);
+  }, [isCollecting, applyInspiration]);
+
+  const handleSectionFocus = (sectionId) => {
+    setActiveSection(sectionId);
+  };
+
+  const handleSectionClick = (sectionId) => {
+    setActiveSection(sectionId);
+    document.getElementById(`collection-section-${sectionId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="mesh-bg min-h-screen flex flex-col transition-colors duration-300">
       <header className="sticky top-0 z-30 bg-navy/90 backdrop-blur-md border-b border-amber/15">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div
               className="w-9 h-9 rounded-full bg-amber/15 border border-amber/30 flex items-center justify-center"
               aria-hidden="true"
@@ -79,14 +84,19 @@ export default function TripPlannerApp() {
                 Voyager AI
               </h1>
               <p className="text-xs text-amber/70 sm:hidden">
-                {isCollecting ? `Step ${collectionStage} of 10` : getStageLabel(stage)}
+                {isCollecting ? getStageLabel(activeSection) : getStageLabel(stage)}
               </p>
             </div>
           </div>
 
-          <StageIndicator currentStage={collectionStage} isCollecting={isCollecting} />
+          <StageIndicator
+            activeSection={activeSection}
+            sectionSummaries={sectionSummaries}
+            isCollecting={isCollecting}
+            onSectionClick={handleSectionClick}
+          />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {isLoading && (
               <button
                 type="button"
@@ -111,7 +121,6 @@ export default function TripPlannerApp() {
         </div>
       </header>
 
-      {/* NOTE: widened main to max-w-6xl — no existing sidebar column; LiveEventCard added as right aside */}
       <main className="flex-1 max-w-6xl mx-auto w-full flex overflow-hidden px-4 gap-6">
         {showPlanView ? (
           <section className="w-full flex flex-col h-[calc(100vh-57px)]" aria-label="Trip plan">
@@ -127,40 +136,30 @@ export default function TripPlannerApp() {
         ) : (
           <>
             <section className="flex-1 min-w-0 flex flex-col h-[calc(100vh-57px)]" aria-label="Trip setup">
-              <ChatWindow
-                messages={messages}
-                isLoading={isLoading}
-                chips={chips}
-                error={error}
+              <TripCollectionWizard
+                tripData={collectionTripData}
+                draft={collectionDraft}
+                sectionSummaries={sectionSummaries}
                 collectionError={collectionError}
-                onSend={sendMessage}
-                onChipSelect={handleChipSelect}
-                onDateSelect={handleDateSelect}
-                onTravelStyleConfirm={handleTravelStyleConfirm}
-                onBack={handleBack}
-                onRetry={retryLastMessage}
-                onReset={resetChat}
+                isLoading={isLoading}
+                prefillDestination={prefillDestination}
+                onPatchTrip={patchTripData}
+                onToggleDietary={toggleDietaryChip}
                 onToggleTravelStyle={toggleTravelStyle}
                 onUpdateTravelStyleText={updateTravelStyleText}
-                onSetGroupSize={setGroupSize}
-                onConfirmGroupSize={confirmGroupSize}
-                isCollecting={isCollecting}
-                collectionStage={collectionStage}
-                currentStep={currentStep}
-                collectionDraft={collectionDraft}
-                collectionTripData={collectionTripData}
-                prefillDestination={prefillDestination}
-                currentStepId={currentStepId}
+                onSubmit={submitCollectionCards}
+                onSectionFocus={handleSectionFocus}
+                focusSectionId={activeSection}
+                validationErrors={cardValidationErrors}
               />
             </section>
             <aside
               className="hidden md:flex w-72 shrink-0 py-4 pointer-events-auto"
-              aria-label="Live events"
+              aria-label="Seasonal phenomena"
             >
-              <LiveEventCard
+              <SeasonalCard
                 variant="sidebar"
                 isCollecting={isCollecting}
-                pauseRotation={isWizardActive}
                 dimmed={isWizardActive}
               />
             </aside>

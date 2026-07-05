@@ -41,7 +41,8 @@ const CONTINUE_PROMPT =
   'Your previous response was cut off by a length limit. Continue EXACTLY where you stopped — '
   + 'mid-sentence if needed. Rules:\n'
   + '- Output ONLY new text; do not repeat anything already written.\n'
-  + '- Keep the exact format: DAY N | Location: Theme, then Morning/Afternoon/Evening lines.\n'
+  + '- Keep the exact format: DAY N | Location: Theme, then Morning/Afternoon/Evening lines each ending with "Why today: [reason]".\n'
+  + '- After itinerary: ##CHECKLIST_START## … ##CHECKLIST_END##, then ##INSIDER_TIPS_START## … ##INSIDER_TIPS_END## (tips must NOT repeat the itinerary).\n'
   + '- Use clear, grammatical English — complete sentences only, no fragments.\n'
   + '- Finish all remaining itinerary days, then the checklist block, insider tips, and ##STAGE##5##END_STAGE##.';
 

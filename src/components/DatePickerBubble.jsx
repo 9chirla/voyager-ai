@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -25,9 +25,25 @@ function parseIso(iso) {
 
 /**
  * Inline calendar date picker for collection stages.
- * @param {{ onSelect: (isoDate: string) => void, minDate?: string, selectedDate?: string|null, label?: string }} props
+ * @param {{
+ *   onSelect: (isoDate: string) => void,
+ *   minDate?: string,
+ *   selectedDate?: string|null,
+ *   label?: string,
+ *   viewAnchorDate?: string|null,
+ *   active?: boolean,
+ *   id?: string,
+ * }} props
  */
-export default function DatePickerBubble({ onSelect, minDate, selectedDate = null, label }) {
+export default function DatePickerBubble({
+  onSelect,
+  minDate,
+  selectedDate = null,
+  label,
+  viewAnchorDate = null,
+  active = false,
+  id,
+}) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -35,8 +51,17 @@ export default function DatePickerBubble({ onSelect, minDate, selectedDate = nul
 
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) return parseIso(selectedDate);
+    if (viewAnchorDate) return parseIso(viewAnchorDate);
     return min > today ? min : today;
   });
+
+  useEffect(() => {
+    if (selectedDate) {
+      setViewDate(parseIso(selectedDate));
+    } else if (viewAnchorDate) {
+      setViewDate(parseIso(viewAnchorDate));
+    }
+  }, [selectedDate, viewAnchorDate]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -74,7 +99,12 @@ export default function DatePickerBubble({ onSelect, minDate, selectedDate = nul
   }
 
   return (
-    <div className="rounded-xl bg-navy-glass border border-white/10 p-4 max-w-xs">
+    <div
+      id={id}
+      className={`rounded-xl bg-navy-glass border p-4 max-w-xs transition-all duration-300 ${
+        active ? 'border-amber/50 ring-2 ring-amber/25 shadow-lg shadow-amber/5' : 'border-white/10'
+      }`}
+    >
       {label && <p className="text-xs text-cream/50 mb-3">{label}</p>}
 
       <div className="flex items-center justify-between mb-3">

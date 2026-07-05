@@ -16,7 +16,14 @@
     "test:watch": "vitest",
     "test:unit": "vitest run src/",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "generate:destinations": "node scripts/generate_destinations.mjs",
+    "sync:visa": "npm run generate:destinations && scripts/.venv/bin/python scripts/sync_visa_from_xlsx.py",
+    "audit:visa": "scripts/.venv/bin/python scripts/audit_visa_data.py",
+    "download:destinations": "node scripts/download_destination_images.mjs",
+    "generate:uk-destinations": "node scripts/generate_uk_destinations.mjs",
+    "generate:uk-travel": "node scripts/generate_uk_travel_matrix.mjs",
+    "download:uk-destinations": "node scripts/download_uk_destination_images.mjs"
   },
   "dependencies": {
     "@react-spring/three": "^9.7.5",
@@ -24,6 +31,7 @@
     "@react-three/fiber": "^8.17.10",
     "@react-three/postprocessing": "^2.16.3",
     "cors": "^2.8.5",
+    "country-flag-icons": "^1.6.17",
     "d3": "^7.9.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -33,7 +41,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.17.0",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "world-countries": "^5.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

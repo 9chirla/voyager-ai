@@ -4,8 +4,11 @@
  * @property {string} location - City or area name
  * @property {string} theme - Theme or focus for the day
  * @property {string} morning - Morning activity
+ * @property {string} [morningWhy] - Why this activity is scheduled this day
  * @property {string} afternoon - Afternoon activity
+ * @property {string} [afternoonWhy]
  * @property {string} evening - Evening activity
+ * @property {string} [eveningWhy]
  */
 
 /**
@@ -21,6 +24,14 @@ const ITINERARY_BLOCK_REGEX =
 /** Open itinerary block when END tag is missing (auto-continue partial). */
 const ITINERARY_OPEN_REGEX =
   /\s*##\s*ITINERARY_START\s*##([\s\S]*)$/i;
+
+/** Open insider tips block when END tag is missing. */
+const INSIDER_TIPS_OPEN_REGEX =
+  /\s*##\s*INSIDER_TIPS_START\s*##([\s\S]*)$/i;
+
+/** Flexible whitespace-tolerant closed insider tips block. */
+const INSIDER_TIPS_BLOCK_REGEX =
+  /\s*##\s*INSIDER_TIPS_START\s*##([\s\S]*?)\s*##\s*INSIDER_TIPS_END\s*##/i;
 
 /** Flexible whitespace-tolerant closed checklist block. */
 const CHECKLIST_BLOCK_REGEX =
@@ -80,6 +91,39 @@ function extractActivity(body, slot) {
     if (match) return match[1].trim();
   }
   return '';
+}
+
+/**
+ * Split "Activity. Why today: reason" into parts for display.
+ * @param {string} text
+ * @returns {{ activity: string, whyToday: string }}
+ */
+export function splitActivityRationale(text) {
+  if (!text) return { activity: '', whyToday: '' };
+  const match = text.match(/^(.+?)\.\s*Why today:\s*(.+)$/i)
+    || text.match(/^(.+?)\s+Why today:\s*(.+)$/i);
+  if (match) {
+    return { activity: match[1].trim(), whyToday: match[2].trim() };
+  }
+  return { activity: text, whyToday: '' };
+}
+
+/**
+ * @param {string} body
+ * @returns {Pick<ItineraryDay, 'morning'|'morningWhy'|'afternoon'|'afternoonWhy'|'evening'|'eveningWhy'>}
+ */
+function extractDaySlots(body) {
+  const morning = splitActivityRationale(extractActivity(body, 'Morning'));
+  const afternoon = splitActivityRationale(extractActivity(body, 'Afternoon'));
+  const evening = splitActivityRationale(extractActivity(body, 'Evening'));
+  return {
+    morning: morning.activity,
+    ...(morning.whyToday ? { morningWhy: morning.whyToday } : {}),
+    afternoon: afternoon.activity,
+    ...(afternoon.whyToday ? { afternoonWhy: afternoon.whyToday } : {}),
+    evening: evening.activity,
+    ...(evening.whyToday ? { eveningWhy: evening.whyToday } : {}),
+  };
 }
 
 /**
@@ -202,9 +246,7 @@ export function parseDaysFromBlock(block) {
         const body = bodyLines.join('\n');
         days.push({
           ...current,
-          morning: extractActivity(body, 'Morning'),
-          afternoon: extractActivity(body, 'Afternoon'),
-          evening: extractActivity(body, 'Evening'),
+          ...extractDaySlots(body),
         });
       }
       current = header;
@@ -218,9 +260,7 @@ export function parseDaysFromBlock(block) {
     const body = bodyLines.join('\n');
     days.push({
       ...current,
-      morning: extractActivity(body, 'Morning'),
-      afternoon: extractActivity(body, 'Afternoon'),
-      evening: extractActivity(body, 'Evening'),
+      ...extractDaySlots(body),
     });
   }
 
@@ -235,6 +275,84 @@ export function parseDaysFromBlock(block) {
 function countDayLines(text) {
   const normalized = normalizeLineEndings(text);
   return normalized.split('\n').filter((line) => DAY_HEADER_DETECT_REGEX.test(line)).length;
+}
+
+/**
+ * Remove day headers and Morning/Afternoon/Evening lines from free text.
+ * @param {string} text
+ * @returns {string}
+ */
+export function stripItineraryDayContent(text) {
+  if (!text) return '';
+  const lines = normalizeLineEndings(text).split('\n');
+  /** @type {string[]} */
+  const kept = [];
+  let skippingDay = false;
+
+  for (const line of lines) {
+    const trimmed = stripBold(line.trim());
+
+    if (DAY_HEADER_DETECT_REGEX.test(trimmed)) {
+      skippingDay = true;
+      continue;
+    }
+
+    if (skippingDay) {
+      if (/^[-•*]?\s*(Morning|Afternoon|Evening)\s*:/i.test(trimmed)) continue;
+      if (!trimmed) continue;
+      if (/^##\s*/.test(trimmed)) {
+        skippingDay = false;
+      } else if (!/^[-•*]/.test(trimmed) && trimmed.length > 0) {
+        skippingDay = false;
+      } else {
+        continue;
+      }
+    }
+
+    if (/^##\s*ITINERARY/i.test(trimmed)) continue;
+    if (/^##\s*ITINERARY_END/i.test(trimmed)) continue;
+
+    kept.push(line);
+  }
+
+  return kept.join('\n').trim();
+}
+
+/**
+ * @param {string} text
+ * @returns {boolean}
+ */
+function looksLikeItinerary(text) {
+  if (!text) return false;
+  return countDayLines(text) >= 2
+    || (DAY_HEADER_DETECT_REGEX.test(text) && /Morning\s*:/i.test(text));
+}
+
+/**
+ * Remove tagged or untagged itinerary region from full response text.
+ * @param {string} normalized
+ * @param {{ hasTags: boolean, isClosed: boolean }} resolved
+ * @param {boolean} parseSuccess
+ * @returns {string}
+ */
+function removeItineraryFromText(normalized, resolved, parseSuccess) {
+  if (!parseSuccess) return normalized.trim();
+
+  if (resolved.hasTags && resolved.isClosed) {
+    return normalized.replace(ITINERARY_BLOCK_REGEX, '').trim();
+  }
+
+  let text = normalized.replace(
+    /##\s*ITINERARY_START\s*##[\s\S]*?(?=##\s*(?:ITINERARY_END|CHECKLIST_START|INSIDER_TIPS_START)\s*##)/i,
+    '',
+  );
+  text = text.replace(/##\s*ITINERARY_END\s*##/gi, '');
+
+  if (!resolved.hasTags) {
+    text = stripItineraryDayContent(text);
+  }
+
+  return text.trim();
 }
 
 /**
@@ -317,17 +435,7 @@ export function parseItinerary(text) {
 
   const days = parseDaysFromBlock(resolved.block);
   const parseSuccess = days.length > 0;
-
-  let cleanedText;
-  if (parseSuccess && resolved.hasTags && resolved.isClosed) {
-    cleanedText = normalized.replace(ITINERARY_BLOCK_REGEX, '').trim();
-  } else if (resolved.hasTags) {
-    cleanedText = unwrapItineraryTags(normalized);
-  } else if (parseSuccess) {
-    cleanedText = normalized.trim();
-  } else {
-    cleanedText = normalized.trim();
-  }
+  const cleanedText = removeItineraryFromText(normalized, resolved, parseSuccess);
 
   return { days, cleanedText, parseSuccess };
 }
@@ -501,6 +609,66 @@ export function parseChips(text) {
 }
 
 /**
+ * Parse insider tips — must NOT contain the day-by-day itinerary.
+ * @param {string} text
+ * @returns {{ tips: string, cleanedText: string }}
+ */
+export function parseInsiderTips(text) {
+  if (!text) return { tips: '', cleanedText: '' };
+
+  const normalized = normalizeLineEndings(text);
+  const closed = normalized.match(INSIDER_TIPS_BLOCK_REGEX);
+  if (closed) {
+    const tips = closed[1].replace(STAGE_TAG_REGEX, '').trim();
+    return {
+      tips,
+      cleanedText: normalized.replace(INSIDER_TIPS_BLOCK_REGEX, '').trim(),
+    };
+  }
+
+  const open = normalized.match(INSIDER_TIPS_OPEN_REGEX);
+  if (open) {
+    let tips = open[1]
+      .replace(/\s*##\s*INSIDER_TIPS_END\s*##/i, '')
+      .replace(STAGE_TAG_REGEX, '')
+      .trim();
+    if (looksLikeItinerary(tips)) tips = '';
+    return {
+      tips,
+      cleanedText: normalized.replace(INSIDER_TIPS_OPEN_REGEX, '').trim(),
+    };
+  }
+
+  const headingMatch = normalized.match(
+    /(?:^|\n)\s*(?:#{1,3}\s*)?(?:\*\*)?Insider [Tt]ips:?(?:\*\*)?\s*\n([\s\S]*?)(?=\n##|\n##STAGE|$)/,
+  );
+  if (headingMatch) {
+    let tips = stripItineraryDayContent(headingMatch[1].trim());
+    tips = tips.replace(STAGE_TAG_REGEX, '').trim();
+    if (tips && !looksLikeItinerary(tips)) {
+      return {
+        tips,
+        cleanedText: normalized.replace(headingMatch[0], '').trim(),
+      };
+    }
+  }
+
+  let fallback = stripItineraryDayContent(normalized);
+  fallback = fallback
+    .replace(CHECKLIST_BLOCK_REGEX, '')
+    .replace(/^\s*PACKING:.*$/gim, '')
+    .replace(/^\s*BOOKING:.*$/gim, '')
+    .replace(STAGE_TAG_REGEX, '')
+    .trim();
+
+  if (fallback && !looksLikeItinerary(fallback)) {
+    return { tips: fallback, cleanedText: '' };
+  }
+
+  return { tips: '', cleanedText: normalized.trim() };
+}
+
+/**
  * Parse the AI-emitted stage marker from response text.
  * @param {string} text - Raw AI message content
  * @returns {{ stage: number|null, cleanedText: string }}
@@ -525,6 +693,7 @@ export function stripAllTags(text) {
   return normalized
     .replace(ITINERARY_BLOCK_REGEX, '')
     .replace(CHECKLIST_BLOCK_REGEX, '')
+    .replace(INSIDER_TIPS_BLOCK_REGEX, '')
     .replace(CHIPS_BLOCK_REGEX, '')
     .replace(STAGE_TAG_REGEX, '')
     .trim();

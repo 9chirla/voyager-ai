@@ -4,9 +4,9 @@ import D3GlobeScene from './D3GlobeScene';
 
 /**
  * Full-screen D3 halftone globe hero.
- * @param {{ scrollProgress?: number }} props
+ * @param {{ scrollProgress?: number, focusScope?: 'uk' | 'international' }} props
  */
-export default function HeroCanvas({ scrollProgress = 0 }) {
+export default function HeroCanvas({ scrollProgress = 0, focusScope = 'international' }) {
   const { theme } = useTheme();
   const [viewport, setViewport] = useState({ width: 800, height: 600 });
 
@@ -25,6 +25,7 @@ export default function HeroCanvas({ scrollProgress = 0 }) {
         width={viewport.width}
         height={viewport.height}
         scrollProgress={scrollProgress}
+        focusScope={focusScope}
         theme={theme}
         className="h-full w-full"
       />

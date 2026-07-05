@@ -1,0 +1,1085 @@
+.dest-explorer {
+  position: relative;
+  pointer-events: auto;
+}
+
+.dest-uk-meter {
+  padding: 12px 0 4px;
+}
+
+.dest-uk-meter__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.02em;
+}
+
+.dest-uk-meter__label span:last-child {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dest-explorer__inner {
+  position: relative;
+}
+
+.dest-explorer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--void) 92%, transparent) 0%,
+    color-mix(in srgb, var(--void) 78%, transparent) 40%,
+    color-mix(in srgb, var(--void) 88%, transparent) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dest-explorer__inner > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dest-explorer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+.dest-explorer__header {
+  padding: 4rem 0 1.5rem;
+}
+
+.dest-explorer__sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 1rem 0 1.25rem;
+  margin-bottom: 1rem;
+  background: color-mix(in srgb, var(--void) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.12);
+}
+
+.dest-strength-meter {
+  margin-bottom: 1rem;
+}
+
+.dest-strength-meter__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(240, 236, 224, 0.55);
+  margin-bottom: 6px;
+}
+
+.dest-strength-meter__track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.dest-strength-meter__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 400ms ease, background-color 400ms ease;
+}
+
+.dest-strength-meter__fill--coral { background: #e07a6a; }
+.dest-strength-meter__fill--amber { background: #c9a84c; }
+.dest-strength-meter__fill--teal { background: #4ecdc4; }
+
+.dest-strength-meter__fill--pulse {
+  animation: destMeterPulse 300ms ease;
+}
+
+@keyframes destMeterPulse {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.35); }
+}
+
+.dest-strength-meter__strongest {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(240, 236, 224, 0.5);
+}
+
+.dest-passport-selector__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dest-passport-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  background: transparent;
+  color: #c9a84c;
+  cursor: pointer;
+  transition: background 200ms ease, border-color 200ms ease, transform 100ms ease;
+}
+
+.dest-passport-chip:hover {
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.dest-passport-chip--selected {
+  background: rgba(201, 168, 76, 0.18);
+  border-color: #c9a84c;
+  color: #f0ece0;
+}
+
+.dest-passport-chip--shake {
+  animation: destChipShake 400ms ease;
+}
+
+@keyframes destChipShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.dest-passport-selector__search-wrap {
+  position: relative;
+}
+
+.dest-passport-selector__search {
+  width: 100%;
+  max-width: 280px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f0ece0;
+  font-size: 12px;
+}
+
+.dest-passport-selector__search:focus {
+  outline: 2px solid rgba(201, 168, 76, 0.4);
+  outline-offset: 2px;
+}
+
+.dest-passport-selector__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: rgba(10, 10, 26, 0.95);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 30;
+}
+
+.dest-passport-selector__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  color: #f0ece0;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.dest-passport-selector__dropdown-item:hover {
+  background: rgba(201, 168, 76, 0.1);
+}
+
+.dest-passport-selector__tooltip {
+  font-size: 11px;
+  color: #e07a6a;
+  margin-top: 6px;
+}
+
+.dest-held-visa-selector {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 168, 76, 0.12);
+}
+
+.dest-held-visa-selector__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(240, 236, 224, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dest-held-visa-selector__toggle:hover {
+  color: #c9a84c;
+}
+
+.dest-held-visa-selector__hint {
+  margin: 8px 0 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(240, 236, 224, 0.45);
+}
+
+.dest-held-visa-selector__hint em {
+  font-style: normal;
+  color: rgba(201, 168, 76, 0.85);
+}
+
+.dest-held-visa-selector__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dest-held-visa-chip {
+  border-style: dashed;
+}
+
+.dest-strength-meter__boost {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(78, 205, 196, 0.85);
+}
+
+.dest-visa-pill__via {
+  font-size: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+
+.dest-grid-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dest-grid-search__input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f0ece0;
+  font-size: 14px;
+}
+
+.dest-grid-search__input::placeholder {
+  color: rgba(240, 236, 224, 0.4);
+}
+
+.dest-grid-search__input:focus {
+  outline: none;
+  border-color: rgba(201, 168, 76, 0.5);
+}
+
+.dest-grid-search__count {
+  font-size: 11px;
+  color: rgba(240, 236, 224, 0.45);
+  white-space: nowrap;
+}
+
+.dest-grid__cell {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px 280px;
+}
+
+.dest-grid-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.dest-grid-controls__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dest-grid-controls__label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(240, 236, 224, 0.4);
+  margin-right: 4px;
+}
+
+.dest-filter-pill,
+.dest-sort-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  background: transparent;
+  color: rgba(240, 236, 224, 0.65);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.dest-filter-pill--active,
+.dest-sort-pill--active {
+  background: rgba(201, 168, 76, 0.18);
+  border-color: #c9a84c;
+  color: #f0ece0;
+}
+
+.dest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.dest-grid__cell {
+  position: relative;
+  height: 200px;
+  min-height: 200px;
+}
+
+.dest-grid__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: rgba(240, 236, 224, 0.55);
+  font-size: 14px;
+}
+
+.dest-card {
+  width: 100%;
+  max-width: 280px;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: box-shadow 300ms ease, opacity 400ms ease, transform 400ms ease;
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.dest-card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dest-card--expanded {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 25;
+  height: 420px;
+  max-height: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.dest-card__media {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+}
+
+.dest-card__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.02);
+  transition: transform 500ms ease;
+}
+
+.dest-card:hover .dest-card__image {
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dest-card__image,
+  .dest-card:hover .dest-card__image {
+    transform: none;
+    transition: none;
+  }
+}
+
+.dest-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.15) 40%,
+    rgba(0, 0, 0, 0.55) 72%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+  pointer-events: none;
+}
+
+.dest-card--expanded .dest-card__scrim {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.55) 35%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
+}
+
+.dest-card__content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.country-flag {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.country-flag--card {
+  width: 28px;
+  height: auto;
+}
+
+.country-flag--chip {
+  width: 18px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.country-flag--inline {
+  width: 16px;
+  height: auto;
+  margin-right: 2px;
+}
+
+.country-flag--fallback {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.dest-visa-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-top: 1.25rem;
+}
+
+.dest-visa-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dest-visa-legend__hint {
+  font-size: 11px;
+  color: rgba(240, 236, 224, 0.45);
+}
+
+.dest-visa-pill--compact {
+  font-size: 8px;
+  padding: 2px 6px;
+}
+
+.dest-visa-detail {
+  margin: 12px 0 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dest-visa-detail__summary {
+  margin-bottom: 10px;
+}
+
+.dest-visa-detail__desc {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.dest-visa-detail__via {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #4ecdc4;
+}
+
+.dest-visa-detail__breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dest-visa-detail__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px 10px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.dest-visa-detail__passport {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dest-visa-detail__cost,
+.dest-visa-detail__alone {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dest-visa-detail__alone {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}
+
+.dest-visa-detail__notes {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  line-height: 1.5;
+  color: rgba(201, 168, 76, 0.85);
+}
+
+.dest-card__top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dest-card__close {
+  border: none;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.dest-visa-pill {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.dest-visa-pill--free { color: #7dcea0; }
+.dest-visa-pill--voa { color: #f5c842; }
+.dest-visa-pill--evisa { color: #6eb5ff; }
+.dest-visa-pill--required { color: #e07a6a; }
+.dest-visa-pill--unknown { color: rgba(255, 255, 255, 0.55); }
+
+.dest-card__bottom {
+  margin-top: auto;
+}
+
+.dest-card__country {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 4px;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.65);
+}
+
+.dest-card__region {
+  font-size: 11px;
+  opacity: 0.7;
+  margin: 0 0 8px;
+}
+
+.dest-card__tagline {
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.85;
+  margin: 0 0 6px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
+.dest-card__uk-travel {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 10px;
+  line-height: 1.35;
+  opacity: 0.75;
+  margin: 0 0 8px;
+}
+
+.dest-card__uk-travel svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: 0.85;
+}
+
+.uk-nation-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+.uk-nation-badge--card {
+  text-shadow: none;
+}
+
+.uk-nation-badge--england { color: #c9d4e8; border: 1px solid rgba(200, 212, 232, 0.35); }
+.uk-nation-badge--scotland { color: #8ec5e8; border: 1px solid rgba(142, 197, 232, 0.35); }
+.uk-nation-badge--wales { color: #9ed4a8; border: 1px solid rgba(158, 212, 168, 0.35); }
+.uk-nation-badge--ni { color: #d4a8c8; border: 1px solid rgba(212, 168, 200, 0.35); }
+
+.dest-uk-trip-pill {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #e8c96d;
+  white-space: nowrap;
+}
+
+.dest-uk-detail {
+  margin: 12px 0 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dest-uk-detail__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.dest-uk-detail__row + .dest-uk-detail__row {
+  margin-top: 8px;
+}
+
+.dest-uk-detail__row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: 0.8;
+}
+
+.dest-uk-detail__stay {
+  opacity: 0.8;
+}
+
+.dest-uk-detail--stay-only {
+  margin-top: 0;
+}
+
+.dest-uk-home {
+  margin-bottom: 0.5rem;
+}
+
+.dest-uk-home__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(240, 236, 224, 0.65);
+}
+
+.dest-uk-home__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dest-uk-home-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(240, 236, 224, 0.85);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.dest-uk-home-chip:hover {
+  border-color: rgba(201, 168, 76, 0.45);
+}
+
+.dest-uk-home-chip--active {
+  border-color: #c9a84c;
+  background: rgba(201, 168, 76, 0.15);
+  color: #e8c96d;
+}
+
+.dest-uk-home__header--mode {
+  margin-top: 14px;
+}
+
+.dest-uk-home-chip--mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dest-uk-home__hint {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(240, 236, 224, 0.5);
+}
+
+.dest-uk-travel-panel {
+  margin: 10px 0 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dest-uk-travel-panel--compact {
+  margin: 0 0 8px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.dest-uk-travel-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.dest-uk-travel-panel--compact .dest-uk-travel-panel__grid {
+  display: none;
+}
+
+.dest-uk-travel-panel__stat-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(240, 236, 224, 0.5);
+  margin-bottom: 2px;
+}
+
+.dest-uk-travel-panel__stat-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0ece0;
+}
+
+.dest-uk-travel-panel__stat-value--yes {
+  color: #7dcea0;
+}
+
+.dest-uk-travel-panel__stat-value--no {
+  color: rgba(240, 236, 224, 0.55);
+}
+
+.dest-uk-travel-panel__summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 4px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: rgba(240, 236, 224, 0.9);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.dest-uk-travel-panel__summary svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #e8c96d;
+}
+
+.dest-uk-travel-panel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 9px;
+  color: rgba(240, 236, 224, 0.6);
+}
+
+.dest-uk-travel-panel__route {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(240, 236, 224, 0.8);
+}
+
+.dest-uk-travel-panel__route svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: 0.85;
+}
+
+.dest-uk-travel-panel--compact .dest-uk-travel-panel__route,
+.dest-uk-travel-panel--compact .dest-uk-travel-panel__note {
+  display: none;
+}
+
+.dest-uk-travel-panel__note {
+  margin: 0;
+  font-size: 9px;
+  color: rgba(240, 236, 224, 0.45);
+}
+
+.dest-uk-travel-panel__suggestions {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgba(240, 236, 224, 0.65);
+}
+
+.dest-uk-local-tips {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dest-uk-local-tips--compact {
+  margin-top: 6px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.dest-uk-local-tips__title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #e8c96d;
+}
+
+.dest-uk-local-tips__hire {
+  margin: 0 0 8px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgba(240, 236, 224, 0.75);
+}
+
+.dest-uk-local-tips__list {
+  margin: 0 0 6px;
+  padding-left: 16px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgba(240, 236, 224, 0.8);
+}
+
+.dest-uk-local-tips__routes {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.4;
+  color: rgba(240, 236, 224, 0.55);
+}
+
+.dest-uk-local-tips--compact .dest-uk-local-tips__list {
+  display: none;
+}
+
+.dest-uk-local-tips--compact .dest-uk-local-tips__hire,
+.dest-uk-local-tips--compact .dest-uk-local-tips__routes {
+  display: none;
+}
+
+.dest-card__duration {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.dest-card__live-badge {
+  display: inline-block;
+  font-size: 9px;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(201, 168, 76, 0.25);
+  color: #e8c96d;
+}
+
+.dest-card__expanded-body {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.dest-card__attraction {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.dest-card__attraction-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.85;
+}
+
+.dest-card__attraction-name {
+  font-weight: 500;
+  margin: 0 0 2px;
+}
+
+.dest-card__attraction-detail {
+  margin: 0;
+  opacity: 0.75;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.dest-card__spark-row {
+  display: flex;
+  gap: 4px;
+  margin: 12px 0 8px;
+}
+
+.dest-card__spark-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dest-card__spark-dot--active {
+  background: #e8c96d;
+  box-shadow: 0 0 6px rgba(232, 201, 109, 0.5);
+}
+
+.dest-card__flight {
+  font-size: 11px;
+  opacity: 0.75;
+  margin: 0 0 12px;
+}
+
+.dest-card__weather-tip {
+  font-size: 10px;
+  opacity: 0.6;
+  margin: 0 0 8px;
+}
+
+.dest-card__cta {
+  margin-top: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: #e8c96d;
+  cursor: pointer;
+  text-align: left;
+  transition: color 200ms ease;
+}
+
+.dest-card__cta:hover {
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .dest-explorer__inner {
+    padding: 0 1.25rem 3rem;
+  }
+
+  .dest-grid__cell {
+    height: auto;
+    min-height: 200px;
+  }
+
+  .dest-card {
+    max-width: none;
+  }
+
+  .dest-card--expanded {
+    position: relative;
+    height: auto;
+    max-height: none;
+    min-height: 420px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dest-card,
+  .dest-strength-meter__fill,
+  .dest-passport-chip--shake {
+    transition: none;
+    animation: none;
+  }
+}

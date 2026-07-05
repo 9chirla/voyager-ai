@@ -8,6 +8,8 @@ import {
   extractTripMetadata,
   validateParsedOutput,
   normalizeLineEndings,
+  splitActivityRationale,
+  parseInsiderTips,
 } from './tripParser.js';
 
 const STANDARD_ITINERARY_BLOCK = `
@@ -18,6 +20,90 @@ DAY 1 | Tokyo: Temples & Tradition
 - Evening: Dinner in Shibuya
 ##ITINERARY_END##
 `.trim();
+
+describe('splitActivityRationale', () => {
+  it('splits activity and Why today rationale', () => {
+    const result = splitActivityRationale(
+      'Visit Senso-ji Temple. Why today: Quiet weekday morning before crowds, near your Asakusa hotel after arrival.',
+    );
+    expect(result.activity).toBe('Visit Senso-ji Temple');
+    expect(result.whyToday).toContain('Quiet weekday');
+  });
+
+  it('returns full text as activity when no rationale', () => {
+    expect(splitActivityRationale('Visit Senso-ji Temple').activity).toBe('Visit Senso-ji Temple');
+  });
+});
+
+describe('parseItinerary with Why today', () => {
+  it('parses rationale fields on each slot', () => {
+    const text = `
+##ITINERARY_START##
+DAY 1 | Tokyo: Arrival & gentle start
+- Morning: Senso-ji Temple. Why today: Light recovery after overnight flight.
+- Afternoon: Ueno Park. Why today: Flat, shaded walk suits jet lag.
+- Evening: Dinner in Asakusa. Why today: Walking distance from hotel, early night.
+##ITINERARY_END##
+`.trim();
+    const { days } = parseItinerary(text);
+    expect(days[0].morning).toBe('Senso-ji Temple');
+    expect(days[0].morningWhy).toContain('overnight flight');
+    expect(days[0].eveningWhy).toContain('Walking distance');
+  });
+});
+
+describe('parseInsiderTips', () => {
+  it('extracts tagged insider tips without itinerary content', () => {
+    const text = `
+Some intro
+##ITINERARY_START##
+DAY 1 | Tokyo: Arrival
+- Morning: Senso-ji. Why today: After flight.
+##ITINERARY_END##
+##CHECKLIST_START##
+PACKING: passport
+BOOKING: hotel
+##CHECKLIST_END##
+##INSIDER_TIPS_START##
+Carry cash — many small shops are cash-only.
+##INSIDER_TIPS_END##
+##STAGE##5##END_STAGE##
+`.trim();
+    const afterItinerary = parseItinerary(text).cleanedText;
+    const afterChecklist = parseChecklist(afterItinerary).cleanedText;
+    const { tips } = parseInsiderTips(afterChecklist);
+    expect(tips).toContain('cash-only');
+    expect(tips).not.toMatch(/DAY 1/i);
+  });
+
+  it('returns empty tips when remainder looks like itinerary', () => {
+    const remainder = `
+DAY 1 | Bali: Beach
+- Morning: Surf lesson. Why today: Calm AM swell.
+- Afternoon: Ubud market. Why today: Cooler than midday.
+`.trim();
+    const { tips } = parseInsiderTips(remainder);
+    expect(tips).toBe('');
+  });
+});
+
+describe('parseItinerary cleanedText', () => {
+  it('strips open tagged itinerary from cleaned text', () => {
+    const text = `
+##ITINERARY_START##
+DAY 1 | Rome: History
+- Morning: Colosseum. Why today: Book first slot.
+##CHECKLIST_START##
+PACKING: shoes
+BOOKING: tickets
+##CHECKLIST_END##
+`.trim();
+    const { days, cleanedText } = parseItinerary(text);
+    expect(days).toHaveLength(1);
+    expect(cleanedText).not.toMatch(/DAY 1/i);
+    expect(cleanedText).toMatch(/CHECKLIST_START/i);
+  });
+});
 
 const THREE_DAY_UNTAGGED = `
 DAY 1 | Tokyo: Temples
@@ -61,7 +147,7 @@ describe('parseItinerary', () => {
     expect(result.days[2].day).toBe(3);
     expect(result.days[0].morning).toBe('Senso-ji');
     expect(result.parseSuccess).toBe(true);
-    expect(result.cleanedText).toBe(THREE_DAY_UNTAGGED);
+    expect(result.cleanedText).not.toMatch(/DAY 1/i);
   });
 
   it('parses bold markdown in day headers', () => {

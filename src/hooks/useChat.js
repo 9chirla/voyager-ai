@@ -3,6 +3,7 @@ import {
   parseItinerary,
   parseChecklist,
   parseChips,
+  parseInsiderTips,
   parseStage,
   validateParsedOutput,
 } from '../utils/tripParser';
@@ -20,6 +21,15 @@ import {
   formatDateBadge,
   CONFIRM_DIETARY,
 } from './useTripCollection';
+import {
+  formatInspirationBlock,
+  mergeMustSeeWithInspiration,
+} from '../utils/plannerContext';
+import {
+  chatApiUrl,
+  isStaticHostWithoutApi,
+  STATIC_HOST_API_MESSAGE,
+} from '../utils/apiConfig';
 
 const SESSION_VERSION = 2;
 
@@ -317,8 +327,11 @@ export function useChat() {
   const [isStreamingPlan, setIsStreamingPlan] = useState(false);
   const [chips, setChips] = useState(initialState.current.chips);
   const [error, setError] = useState(null);
+  const [cardValidationErrors, setCardValidationErrors] = useState({});
   const [checklistState, setChecklistState] = useState(loadChecklistState);
   const abortControllerRef = useRef(null);
+  /** @type {import('../utils/plannerContext').PlannerInspirationContext|null} */
+  const inspirationRef = useRef(null);
 
   const abortStream = useCallback(() => {
     if (abortControllerRef.current) {
@@ -363,17 +376,32 @@ export function useChat() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const megaPrompt = buildMegaPrompt(collectedTripData);
+    const enrichedTripData = {
+      ...collectedTripData,
+      mustSee: mergeMustSeeWithInspiration(
+        collectedTripData.mustSee,
+        inspirationRef.current,
+      ),
+    };
+
+    const megaPrompt = buildMegaPrompt(enrichedTripData);
     const apiMessages = [
       { role: 'system', content: MEGA_SYSTEM_PROMPT },
       { role: 'user', content: megaPrompt },
     ];
 
     setStage(5);
-    setTripData(mapCollectionToFullTripData(collectedTripData));
+    setTripData(mapCollectionToFullTripData(enrichedTripData));
+
+    if (isStaticHostWithoutApi()) {
+      setError(STATIC_HOST_API_MESSAGE);
+      setIsLoading(false);
+      setIsStreamingPlan(false);
+      return;
+    }
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(chatApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: apiMessages, stage: 5 }),
@@ -386,7 +414,11 @@ export function useChat() {
           const data = await res.json();
           errorMsg = data.error || errorMsg;
         } catch {
-          // keep default
+          if (res.status === 404) {
+            errorMsg = isStaticHostWithoutApi()
+              ? STATIC_HOST_API_MESSAGE
+              : 'Chat API not found. Run `npm run dev` so Express serves /api/chat.';
+          }
         }
         throw new Error(errorMsg);
       }
@@ -412,7 +444,8 @@ export function useChat() {
 
       const { days, cleanedText: afterItinerary } = parseItinerary(stageClean);
       const { packing, booking, cleanedText: afterChecklist } = parseChecklist(afterItinerary);
-      const { cleanedText: displayText } = parseChips(afterChecklist);
+      const { cleanedText: afterChips } = parseChips(afterChecklist);
+      const { tips } = parseInsiderTips(afterChips);
 
       let validationResult = { valid: true, issues: [] };
 
@@ -422,7 +455,7 @@ export function useChat() {
           packing: packing.length > 0 ? packing : (prev.checklist?.packing ?? []),
           booking: booking.length > 0 ? booking : (prev.checklist?.booking ?? []),
         };
-        const mergedTips = displayText.trim() || prev.tips || '';
+        const mergedTips = tips.trim() || prev.tips || '';
 
         const next = {
           ...prev,
@@ -430,7 +463,7 @@ export function useChat() {
           ...(packing.length > 0 || booking.length > 0
             ? { checklist: { packing, booking } }
             : {}),
-          ...(displayText.trim() ? { tips: displayText.trim() } : {}),
+          ...(tips.trim() ? { tips: tips.trim() } : {}),
         };
 
         validationResult = validateParsedOutput(
@@ -456,7 +489,16 @@ export function useChat() {
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
-      setError(err.message || 'Something went wrong');
+      const message = err.message || 'Something went wrong';
+      if (message === 'Failed to fetch' || message === 'Load failed') {
+        setError(
+          isStaticHostWithoutApi()
+            ? STATIC_HOST_API_MESSAGE
+            : 'Could not reach the Voyager API. Check that the server is running (`npm run dev`).',
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
@@ -561,6 +603,17 @@ export function useChat() {
     );
   }, [collection]);
 
+  const submitCollectionCards = useCallback(async () => {
+    setError(null);
+    const result = collection.submitFromCards();
+    if (!result.success) {
+      setCardValidationErrors(result.errors ?? {});
+      return;
+    }
+    setCardValidationErrors({});
+    await fetchMegaResponse(result.collected);
+  }, [collection, fetchMegaResponse]);
+
   const retryLastMessage = useCallback(async () => {
     if (isLoading) return;
     setError(null);
@@ -577,16 +630,25 @@ export function useChat() {
     });
   }, []);
 
+  const applyInspiration = useCallback((context) => {
+    inspirationRef.current = context;
+    collection.patchTripData({ destination: context.destination });
+    collection.updateTravelStyleText(
+      'mustSee',
+      mergeMustSeeWithInspiration(null, context) ?? '',
+    );
+  }, [collection]);
+
   const resetChat = useCallback(() => {
     abortStream();
+    inspirationRef.current = null;
     collection.resetCollection();
-    setMessages([
-      { role: 'assistant', content: COLLECTION_WELCOME + buildCurrentStep(INITIAL_STEP, {}).question, stage: 1 },
-    ]);
+    setMessages([]);
     setTripData({ ...DEFAULT_TRIP_DATA, interests: [] });
     setStage(1);
     setChips([]);
     setError(null);
+    setCardValidationErrors({});
     setChecklistState({});
     localStorage.removeItem(CHECKLIST_STORAGE_KEY);
     localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -606,6 +668,7 @@ export function useChat() {
     error,
     collectionError: collection.collectionError,
     sendMessage,
+    applyInspiration,
     handleChipSelect,
     handleDateSelect,
     handleTravelStyleConfirm,
@@ -625,5 +688,11 @@ export function useChat() {
     setGroupSize: collection.setGroupSize,
     confirmGroupSize: collection.confirmGroupSize,
     collectionTripData: collection.tripData,
+    sectionSummaries: collection.sectionSummaries,
+    patchTripData: collection.patchTripData,
+    patchDraft: collection.patchDraft,
+    toggleDietaryChip: collection.toggleDietaryChip,
+    submitCollectionCards,
+    cardValidationErrors,
   };
 }

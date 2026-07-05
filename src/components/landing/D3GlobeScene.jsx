@@ -9,7 +9,7 @@ import {
 
 /**
  * D3 halftone dot globe — cartographic gold-on-void aesthetic.
- * @param {{ width?: number, height?: number, className?: string, scrollProgress?: number }} props
+ * @param {{ width?: number, height?: number, className?: string, scrollProgress?: number, focusScope?: 'uk' | 'international' }} props
  */
 export default function D3GlobeScene({
   width = 800,
@@ -17,15 +17,18 @@ export default function D3GlobeScene({
   className = '',
   scrollProgress = 0,
   theme = 'dark',
+  focusScope = 'international',
 }) {
   const canvasRef = useRef(null);
   const planeRef = useRef(null);
   const flightPathRef = useRef(null);
   const flightTrailRef = useRef(null);
   const scrollRef = useRef(scrollProgress);
+  const focusScopeRef = useRef(focusScope);
   const [error, setError] = useState(null);
 
   scrollRef.current = scrollProgress;
+  focusScopeRef.current = focusScope;
 
   const getGlobeColors = () => {
     const style = getComputedStyle(document.documentElement);
@@ -126,10 +129,14 @@ export default function D3GlobeScene({
     const allDots = [];
     let landFeatures;
     let orbitTime = 0;
+    let focusProgress = focusScopeRef.current === 'uk' ? 1 : 0;
 
-    const applyScrollTransform = () => {
+    const UK_FOCUS = { lambda: 2, phi: -54, scaleMul: 1.72 };
+
+    const applyScrollTransform = (ukFocus = 0) => {
       const progress = ease(scrollRef.current);
-      const scale = startRadius + (endRadius - startRadius) * progress;
+      const scrollScale = startRadius + (endRadius - startRadius) * progress;
+      const scale = scrollScale * (1 + (UK_FOCUS.scaleMul - 1) * ukFocus);
       const translateX = globeStartX + (endX - globeStartX) * progress;
       const translateY = globeStartY + (endY - globeStartY) * progress;
       projection.scale(scale).translate([translateX, translateY]);
@@ -163,9 +170,9 @@ export default function D3GlobeScene({
       }
     };
 
-    const render = () => {
+    const render = (ukFocus = focusProgress) => {
       context.clearRect(0, 0, containerWidth, containerHeight);
-      const scaleFactor = applyScrollTransform();
+      const scaleFactor = applyScrollTransform(ukFocus);
       const currentScale = projection.scale();
 
       const { ocean, dots } = getGlobeColors();
@@ -216,22 +223,29 @@ export default function D3GlobeScene({
     let autoRotate = true;
     const rotationSpeed = 0.18;
 
-    const updateProjectionRotation = () => {
+    const updateProjectionRotation = (ukFocus = focusProgress) => {
       const progress = ease(scrollRef.current);
       const scrollLambda = progress * 90;
       const scrollPhi = -progress * 18;
 
-      projection.rotate([
-        dragRotation[0] + autoRotateOffset + scrollLambda,
-        Math.max(-90, Math.min(90, dragRotation[1] + scrollPhi)),
-      ]);
+      const globalLambda = dragRotation[0] + autoRotateOffset + scrollLambda;
+      const globalPhi = Math.max(-90, Math.min(90, dragRotation[1] + scrollPhi));
+      const lambda = globalLambda * (1 - ukFocus) + UK_FOCUS.lambda * ukFocus;
+      const phi = globalPhi * (1 - ukFocus) + UK_FOCUS.phi * ukFocus;
+
+      projection.rotate([lambda, phi]);
     };
 
     const rotate = (elapsed) => {
       orbitTime = elapsed * 0.00038;
-      if (autoRotate) autoRotateOffset += rotationSpeed;
-      updateProjectionRotation();
-      render();
+      const focusTarget = focusScopeRef.current === 'uk' ? 1 : 0;
+      focusProgress += (focusTarget - focusProgress) * 0.07;
+
+      if (autoRotate && focusProgress < 0.35) {
+        autoRotateOffset += rotationSpeed;
+      }
+      updateProjectionRotation(focusProgress);
+      render(focusProgress);
     };
 
     const rotationTimer = d3.timer(rotate);
@@ -244,8 +258,8 @@ export default function D3GlobeScene({
       const handleMouseMove = (moveEvent) => {
         dragRotation[0] = startRotation[0] + (moveEvent.clientX - pointerX) * 0.5;
         dragRotation[1] = Math.max(-90, Math.min(90, startRotation[1] - (moveEvent.clientY - pointerY) * 0.5));
-        updateProjectionRotation();
-        render();
+        updateProjectionRotation(focusProgress);
+        render(focusProgress);
       };
       const handleMouseUp = () => {
         document.removeEventListener('mousemove', handleMouseMove);
@@ -270,8 +284,8 @@ export default function D3GlobeScene({
       lastTouchY = e.touches[0].clientY;
       dragRotation[0] += dx * 0.5;
       dragRotation[1] = Math.max(-90, Math.min(90, dragRotation[1] - dy * 0.5));
-      updateProjectionRotation();
-      render();
+      updateProjectionRotation(focusProgress);
+      render(focusProgress);
     };
     const handleTouchEnd = () => {
       setTimeout(() => { autoRotate = true; }, 800);

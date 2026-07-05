@@ -1,68 +1,84 @@
-const COLLECTION_STAGES = [
-  { num: 1, label: 'Destination', icon: '📍' },
-  { num: 2, label: 'Dates', icon: '📅' },
-  { num: 3, label: 'Dates', icon: '📅' },
-  { num: 4, label: 'Dates', icon: '📅' },
-  { num: 5, label: 'Flights', icon: '✈️' },
-  { num: 6, label: 'Stay', icon: '🏨' },
-  { num: 7, label: 'Group', icon: '👥' },
-  { num: 8, label: 'Budget', icon: '💰' },
-  { num: 9, label: 'Dietary', icon: '🥗' },
-  { num: 10, label: 'Style', icon: '🗺️' },
-];
+import { COLLECTION_SECTIONS } from '../utils/collectionValidation';
 
-/** Unique labels for display (10 steps collapsed to meaningful groups in header). */
-const HEADER_STAGES = [
-  { num: 1, label: 'Destination', icon: '📍' },
-  { num: 2, label: 'Dates', icon: '📅' },
-  { num: 5, label: 'Flights', icon: '✈️' },
-  { num: 6, label: 'Stay', icon: '🏨' },
-  { num: 7, label: 'Group', icon: '👥' },
-  { num: 8, label: 'Budget', icon: '💰' },
-  { num: 9, label: 'Dietary', icon: '🥗' },
-  { num: 10, label: 'Style', icon: '🗺️' },
-];
+const SECTION_ICONS = {
+  1: '📍',
+  2: '📅',
+  3: '✈️',
+  4: '🏨',
+  5: '👥',
+  6: '💰',
+  7: '🥗',
+  8: '🗺️',
+};
 
 /**
- * Visual progress indicator for the 10-step collection wizard.
- * @param {{ currentStage: number, isCollecting?: boolean }} props
+ * Visual progress for card-based collection — sections are clickable to jump & edit.
+ * @param {{
+ *   activeSection?: number,
+ *   sectionSummaries?: Record<number, string|null>,
+ *   isCollecting?: boolean,
+ *   onSectionClick?: (sectionId: number) => void,
+ * }} props
  */
-export default function StageIndicator({ currentStage, isCollecting = true }) {
+export default function StageIndicator({
+  activeSection = 1,
+  sectionSummaries = {},
+  isCollecting = true,
+  onSectionClick,
+}) {
   if (!isCollecting) return null;
-
-  const stage = Math.min(Math.max(currentStage, 1), 10);
 
   return (
     <nav
       data-testid="stage-indicator"
-      data-current-stage={stage}
-      aria-label="Collection progress"
-      className="hidden sm:flex items-center gap-1"
+      data-current-stage={activeSection}
+      aria-label="Collection sections"
+      className="hidden sm:flex items-center gap-0.5 max-w-[52vw] overflow-x-auto"
     >
-      <span className="sr-only">Step {stage} of 10</span>
-      {HEADER_STAGES.map((s, i) => {
-        const isActive = stage === s.num || (s.num === 2 && stage >= 2 && stage <= 4);
-        const isComplete = stage > s.num && !(s.num === 2 && stage <= 4);
+      <span className="sr-only">Section {activeSection} of {COLLECTION_SECTIONS.length}</span>
+      {COLLECTION_SECTIONS.map((section, i) => {
+        const isActive = activeSection === section.id;
+        const isComplete = Boolean(sectionSummaries[section.id]);
+
+        const content = (
+          <>
+            <span aria-hidden="true">{isComplete && !isActive ? '✓' : SECTION_ICONS[section.id]}</span>
+            <span className="hidden lg:inline font-medium">{section.title}</span>
+          </>
+        );
+
+        const className = `flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors duration-300 whitespace-nowrap ${
+          isActive
+            ? 'bg-amber/20 text-amber border border-amber/40'
+            : isComplete
+              ? 'text-teal/80 hover:bg-teal/10'
+              : 'text-cream/30 hover:text-cream/50'
+        }`;
 
         return (
-          <div key={s.num} className="flex items-center">
-            <div
-              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors duration-300 ${
-                isActive
-                  ? 'bg-amber/20 text-amber border border-amber/40'
-                  : isComplete
-                    ? 'text-teal/80'
-                    : 'text-cream/30'
-              }`}
-              aria-current={isActive ? 'step' : undefined}
-              title={`Step ${s.num}: ${s.label}`}
-            >
-              <span aria-hidden="true">{isComplete ? '✓' : s.icon}</span>
-              <span className="hidden lg:inline font-medium">{s.label}</span>
-            </div>
-            {i < HEADER_STAGES.length - 1 && (
+          <div key={section.id} className="flex items-center shrink-0">
+            {onSectionClick ? (
+              <button
+                type="button"
+                onClick={() => onSectionClick(section.id)}
+                className={`${className} focus:outline-none focus:ring-2 focus:ring-amber/30`}
+                aria-current={isActive ? 'step' : undefined}
+                title={section.title}
+              >
+                {content}
+              </button>
+            ) : (
               <div
-                className={`w-3 h-px mx-0.5 ${isComplete ? 'bg-teal/50' : 'bg-cream/10'}`}
+                className={className}
+                aria-current={isActive ? 'step' : undefined}
+                title={section.title}
+              >
+                {content}
+              </div>
+            )}
+            {i < COLLECTION_SECTIONS.length - 1 && (
+              <div
+                className={`w-2 h-px mx-0.5 shrink-0 ${isComplete ? 'bg-teal/50' : 'bg-cream/10'}`}
                 aria-hidden="true"
               />
             )}
@@ -74,13 +90,12 @@ export default function StageIndicator({ currentStage, isCollecting = true }) {
 }
 
 /**
- * Get the label for the current collection step.
- * @param {number} stage
+ * @param {number} sectionId
  * @returns {string}
  */
-export function getStageLabel(stage) {
-  const found = COLLECTION_STAGES.find((s) => s.num === stage);
-  return found ? `${found.icon} ${found.label}` : '📍 Destination';
+export function getStageLabel(sectionId) {
+  const section = COLLECTION_SECTIONS.find((s) => s.id === sectionId);
+  return section ? `${SECTION_ICONS[section.id]} ${section.title}` : '📍 Destination';
 }
 
-export { COLLECTION_STAGES as STAGES };
+export { COLLECTION_SECTIONS as STAGES };

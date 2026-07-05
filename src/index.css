@@ -248,6 +248,14 @@
     animation: fadeUp 1s ease 0.6s both;
   }
 
+  .hero-cta-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+  }
+
   .hero-cta-btn {
     display: inline-flex;
     align-items: center;
@@ -262,8 +270,35 @@
     border-radius: 100px;
     border: 1.5px solid color-mix(in srgb, var(--gold) 70%, transparent);
     cursor: pointer;
-    margin-top: 2.5rem;
+    margin-top: 0;
     transition: all 0.3s ease;
+  }
+
+  .hero-cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.5rem 0.35rem 0;
+    border: none;
+    background: none;
+    color: color-mix(in srgb, var(--text-primary) 72%, var(--text-muted));
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .hero-cta-secondary:hover {
+    color: var(--gold);
+    transform: translateY(-1px);
+  }
+
+  .hero-cta-secondary:focus-visible {
+    outline: 2px solid var(--gold-glow);
+    outline-offset: 4px;
+    border-radius: 4px;
   }
 
   .hero-cta-btn:hover {
@@ -392,6 +427,54 @@
     z-index: 100;
   }
 
+  .scope-toggle-fixed {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+  }
+
+  .scope-toggle {
+    display: inline-flex;
+    padding: 4px;
+    gap: 4px;
+    border-radius: 100px;
+    background: color-mix(in srgb, var(--void) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .scope-toggle__btn {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 8px 18px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    color: var(--mist);
+    background: transparent;
+    transition: color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .scope-toggle__btn:hover {
+    color: var(--star-white);
+  }
+
+  .scope-toggle__btn--active {
+    color: var(--void);
+    background: var(--gold);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--gold) 35%, transparent);
+  }
+
+  .scope-toggle__btn:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
   .globe-flight-path {
     fill: none;
     stroke: var(--flight-stroke);
@@ -451,6 +534,18 @@
 
   .landing-scroll-section--over-globe {
     text-shadow: 0 1px 12px color-mix(in srgb, var(--void) 85%, transparent);
+  }
+
+  .landing-section-content {
+    background: linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--void) 88%, transparent) 0%,
+      color-mix(in srgb, var(--void) 55%, transparent) 70%,
+      transparent 100%
+    );
+    border-radius: 4px;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 
   .landing-scroll-section.is-visible {

@@ -9,6 +9,7 @@ import { Check } from 'lucide-react';
  *   onConfirm: () => void,
  *   disabled?: boolean,
  *   error?: string|null,
+ *   hideSubmit?: boolean,
  * }} props
  */
 export default function TravelStyleCard({
@@ -18,6 +19,7 @@ export default function TravelStyleCard({
   onConfirm,
   disabled = false,
   error = null,
+  hideSubmit = false,
 }) {
   const paceChips = [
     'Packed — I want to see everything',
@@ -135,6 +137,7 @@ export default function TravelStyleCard({
 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
+      {!hideSubmit && (
       <button
         type="button"
         onClick={onConfirm}
@@ -145,6 +148,7 @@ export default function TravelStyleCard({
       >
         Build my trip →
       </button>
+      )}
     </div>
   );
 }
