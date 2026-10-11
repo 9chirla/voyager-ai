@@ -1,112 +1,60 @@
-# ✈️ Voyager AI
+# Voyager AI
 
-AI-powered trip planner — 10-step intake wizard, one-shot itinerary generation, structured trip plan view.
+<p align="center">
+  <strong>AI trip planner</strong> — 10-step intake wizard, one streaming itinerary, structured plan view.<br/>
+  No post-generation chat. The plan panel is the product.
+</p>
 
-Node 20+ · React 18 · DeepSeek Chat · MIT License
+<p align="center">
+  <a href="https://9chirla.github.io/voyager-ai/"><img src="https://img.shields.io/badge/live-demo-C9A227?style=flat-square&labelColor=111" alt="Live demo" /></a>
+  <a href="https://github.com/9chirla/voyager-ai/actions"><img src="https://img.shields.io/github/actions/workflow/status/9chirla/voyager-ai/ci.yml?branch=main&style=flat-square&label=CI" alt="CI" /></a>
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/AI-DeepSeek-111?style=flat-square" alt="DeepSeek" />
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT" />
+</p>
 
----
+<p align="center">
+  <img src="docs/images/screenshot-landing.jpg" alt="Voyager AI landing" width="820" />
+</p>
+
+<p align="center">
+  <a href="https://9chirla.github.io/voyager-ai/"><strong>Open live demo →</strong></a>
+</p>
 
 ## How it works
 
-1. **Collection wizard (10 steps, zero API calls)** — Answer questions about destination, dates, flights, accommodation, group, budget, dietary needs, and travel style via chips, calendar, and text inputs.
-2. **Single generation call** — When you finish step 10, Voyager sends one streaming request to DeepSeek and builds your full plan.
-3. **Trip Plan view** — Itinerary days stream in as they are generated; checklist and insider tips appear when complete. Download as `.txt` anytime.
-
-There is **no post-generation chat** — the plan panel is the product.
-
----
-
-## Prerequisites
-
-- Node.js 20+
-- DeepSeek API key — [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys)
-
----
+1. **Collection wizard (10 steps, zero API calls)** — destination, dates, flights, stay, group, budget, diet, travel style  
+2. **Single generation call** — one streaming DeepSeek request builds the full plan  
+3. **Trip Plan view** — days stream in; checklist + tips; download `.txt` anytime  
 
 ## Quick start
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/9chirla/voyager-ai.git
 cd voyager-ai
-cp .env.example .env
-# Add DEEPSEEK_API_KEY to .env
+cp .env.example .env   # set DEEPSEEK_API_KEY
 npm install
-npm run dev
-# Open http://localhost:5173
+npm run dev            # Vite :5173 + Express :3001
 ```
 
-Development runs **Vite on :5173** (frontend) and **Express on :3001** (API). Vite proxies `/api` to Express.
-
----
-
-## Environment variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DEEPSEEK_API_KEY` | Yes | — | DeepSeek API key. Never sent to the browser. |
-| `ALLOWED_ORIGIN` | Prod only | `http://localhost:5173` (dev) | CORS origin for production server. |
-| `PORT` | No | `8080` | Production server port. |
-
----
-
-## Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Vite + Express API concurrently |
-| `npm run build` | Build frontend to `dist/` |
-| `npm start` | Production server (static + API) |
-| `npm run deploy:local` | Build and start production locally |
-| `npm test` | Unit tests (Vitest) |
-| `npm run test:e2e` | Playwright smoke tests (needs `DEEPSEEK_API_KEY` for full flow) |
-
----
-
-## Architecture
-
-```
-useTripCollection (10 steps) → useChat → buildMegaPrompt → POST /api/chat (SSE)
-  → streamParser (live days) + tripParser (batch) → TripSummaryPanel
-```
-
-- **`src/hooks/useTripCollection.js`** — Collection state machine (do not refactor internals lightly).
-- **`src/hooks/useChat.js`** — Orchestrator, streaming, persistence.
-- **`src/utils/tripParser.js`** — Tag-based parsers (frozen public API).
-- **`src/utils/streamParser.js`** — Incremental day extraction during SSE.
-- **`api/routes/chat.js`** — SSE proxy with server-side auto-continue.
-
----
-
-## localStorage keys
-
-| Key | Version | Contents |
-|-----|---------|----------|
-| `voyager-collection` | 3 | Wizard progress |
-| `voyager-session` | 2 | Plan + messages after collection |
-| `voyager-checklist-state` | — | Checkbox states |
-
----
-
-## Production / Docker
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DEEPSEEK_API_KEY` | Yes | Server-only; never sent to the browser |
+| `ALLOWED_ORIGIN` | Prod | CORS origin for the API |
+| `PORT` | No | Production port (default `8080`) |
 
 ```bash
-npm run deploy:local
-# or
-docker build -t voyager-ai .
-docker run -p 8080:8080 -e DEEPSEEK_API_KEY=sk-... -e ALLOWED_ORIGIN=http://localhost:8080 voyager-ai
+npm test
+npm run build
 ```
 
----
+Static Pages build: `npm run build:pages` (see `.github/workflows/pages.yml`).
 
-## Testing
+## Stack
 
-```bash
-npm test              # 38 unit tests (parsers + stream parser)
-npm run test:e2e      # Playwright (skips API-dependent tests without key)
-```
-
----
+React 18 · Vite · Express · DeepSeek Chat · Tailwind · Playwright / Vitest · GitHub Pages
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE)
